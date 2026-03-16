@@ -1,26 +1,25 @@
 {
   "name": "quickpos",
   "private": true,
-  "version": "0.0.0",
-  "type": "module",
-  "main": "dist-electron/main.cjs",
+  "version": "1.0.0",
+  "main": "dist-electron/main.js",
   "scripts": {
-    "dev": "concurrently \"vite\" \"tsc -p electron --watch\" \"wait-on http://localhost:5173 && electron dist-electron/main.cjs\"",
-    "build:electron": "tsc -p electron && ren dist-electron\\main.js main.cjs",
-    "build": "npm run build:electron && tsc -b && vite build",
-    "lint": "eslint .",
-    "preview": "vite preview"
+    "dev": "concurrently \"vite\" \"tsc -p electron --watch\" \"wait-on http://localhost:5173 && electron dist-electron/main.js\"",
+    "build:electron": "tsc -p electron",
+    "build": "npm run build:electron && vite build",
+    "dist": "npm run build && electron-builder"
   },
   "dependencies": {
     "@emotion/react": "^11.14.0",
     "@emotion/styled": "^11.14.1",
     "@mui/icons-material": "^7.3.9",
     "@mui/material": "^7.3.9",
+    "@tailwindcss/vite": "^4.2.1",
     "better-sqlite3": "^12.8.0",
-    "concurrently": "^9.2.1",
     "react": "^19.2.4",
     "react-dom": "^19.2.4",
-    "react-router-dom": "^7.13.1"
+    "react-router-dom": "^7.13.1",
+    "tailwindcss": "^4.2.1"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.4",
@@ -28,7 +27,8 @@
     "@types/node": "^24.12.0",
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
-    "@vitejs/plugin-react": "^6.0.0",
+    "@vitejs/plugin-react": "^5.2.0",
+    "concurrently": "^9.2.1",
     "electron": "^41.0.2",
     "electron-builder": "^26.8.1",
     "eslint": "^9.39.4",
@@ -37,7 +37,22 @@
     "globals": "^17.4.0",
     "typescript": "~5.9.3",
     "typescript-eslint": "^8.56.1",
-    "vite": "^8.0.0",
+    "vite": "^7.3.1",
     "wait-on": "^9.0.4"
+  },
+  "build": {
+    "appId": "com.quickpos.app",
+    "productName": "QuickPOS",
+    "directories": {
+      "output": "release"
+    },
+    "files": [
+      "dist/**/*",
+      "dist-electron/**/*",
+      "package.json"
+    ],
+    "win": {
+      "target": "nsis"
+    }
   }
 }
