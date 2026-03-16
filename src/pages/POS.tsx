@@ -1,12 +1,10 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
-  Box,
   Typography,
   TextField,
   Button,
-  List,
-  ListItem,
-  ListItemText,
+  Card,
+  CardContent,
 } from "@mui/material";
 
 declare global {
@@ -15,18 +13,25 @@ declare global {
   }
 }
 
-export default function POS() {
+interface Props {
+  cart: any[];
+  setCart: React.Dispatch<React.SetStateAction<any[]>>;
+}
+
+export default function POS({ cart, setCart }: Props) {
   const [barcode, setBarcode] = useState("");
-  const [cart, setCart] = useState<any[]>([]);
+  const [products, setProducts] = useState<any[]>([]);
 
-  const scanProduct = async () => {
-    const product = await window.api.getProduct(barcode);
+  useEffect(() => {
+    loadProducts();
+  }, []);
 
-    if (!product) {
-      alert("Product not found");
-      return;
-    }
+  const loadProducts = async () => {
+    const data = await window.api.getProducts();
+    setProducts(data || []);
+  };
 
+  const addToCart = (product: any) => {
     const exist = cart.find((p) => p.id === product.id);
 
     if (exist) {
@@ -35,52 +40,74 @@ export default function POS() {
     } else {
       setCart([...cart, { ...product, qty: 1 }]);
     }
+  };
 
+  const scanProduct = async () => {
+    if (!barcode) return;
+
+    const product = await window.api.getProduct(barcode);
+
+    if (!product) {
+      alert("Product not found");
+      return;
+    }
+
+    addToCart(product);
     setBarcode("");
   };
 
-  const total = cart.reduce((sum, item) => sum + item.price * item.qty, 0);
-
-  const pay = async () => {
-    await window.api.createOrder(cart);
-
-    alert("Payment success");
-
-    setCart([]);
-  };
-
   return (
-    <Box>
-      <Typography variant="h5">QuickPOS</Typography>
+    <div className="p-6">
 
-      <Box sx={{ mt: 2 }}>
-        <TextField
-          label="Scan Barcode"
-          value={barcode}
-          onChange={(e) => setBarcode(e.target.value)}
-        />
+      {/* HEADER */}
+      <Typography variant="h5" fontWeight={700} className="mb-6">
+        POS
+      </Typography>
 
-        <Button variant="contained" sx={{ ml: 2 }} onClick={scanProduct}>
-          Add
-        </Button>
-      </Box>
-
-      <List sx={{ mt: 3 }}>
-        {cart.map((item) => (
-          <ListItem key={item.id}>
-            <ListItemText
-              primary={`${item.name} x${item.qty}`}
-              secondary={`฿${item.price}`}
+      {/* SCAN BARCODE */}
+      <Card className="mb-6 max-w-xl">
+        <CardContent>
+          <div className="flex gap-3">
+            <TextField
+              fullWidth
+              label="Scan Barcode"
+              value={barcode}
+              autoFocus
+              onChange={(e) => setBarcode(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") scanProduct();
+              }}
             />
-          </ListItem>
+
+            <Button
+              variant="contained"
+              size="large"
+              onClick={scanProduct}
+            >
+              Add
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* PRODUCT GRID */}
+      <div className="grid grid-cols-[repeat(auto-fill,minmax(180px,1fr))] gap-4">
+        {products.map((product) => (
+          <div
+            key={product.id}
+            onClick={() => addToCart(product)}
+            className="p-4 rounded-xl border border-gray-200 text-center cursor-pointer transition hover:scale-105 hover:shadow-md bg-white"
+          >
+            <Typography fontWeight={600}>
+              {product.name}
+            </Typography>
+
+            <Typography className="text-gray-500 mt-1">
+              ฿{product.price}
+            </Typography>
+          </div>
         ))}
-      </List>
-
-      <Typography variant="h6">Total: ฿{total}</Typography>
-
-      <Button variant="contained" color="success" sx={{ mt: 2 }} onClick={pay}>
-        Pay
-      </Button>
-    </Box>
+      </div>
+    </div>
   );
 }
