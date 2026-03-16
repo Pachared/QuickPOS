@@ -6,6 +6,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const electron_1 = require("electron");
 const path_1 = __importDefault(require("path"));
 const sqlite_1 = __importDefault(require("./database/sqlite"));
+const isDev = !electron_1.app.isPackaged;
 function createWindow() {
     const win = new electron_1.BrowserWindow({
         width: 1200,
@@ -14,7 +15,16 @@ function createWindow() {
             preload: path_1.default.join(__dirname, "preload.js"),
         },
     });
-    win.loadURL("http://localhost:5173");
+    if (isDev) {
+        // ตอน dev
+        win.loadURL("http://localhost:5173");
+        win.webContents.openDevTools();
+    }
+    else {
+        // ตอน build exe
+        win.loadFile(path_1.default.join(__dirname, "../dist/index.html"));
+    }
+    win.webContents.openDevTools();
 }
 electron_1.app.whenReady().then(createWindow);
 /* ---------- Product Lookup ---------- */
@@ -43,4 +53,8 @@ electron_1.ipcMain.handle("order:create", (event, cart) => {
     });
     transaction(cart);
     return { success: true };
+});
+electron_1.ipcMain.handle("products:getAll", () => {
+    const products = sqlite_1.default.prepare("SELECT * FROM products").all();
+    return products;
 });
