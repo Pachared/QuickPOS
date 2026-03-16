@@ -2,6 +2,8 @@ import { app, BrowserWindow, ipcMain } from "electron";
 import path from "path";
 import db from "./database/sqlite";
 
+const isDev = !app.isPackaged;
+
 function createWindow() {
   const win = new BrowserWindow({
     width: 1200,
@@ -11,7 +13,15 @@ function createWindow() {
     },
   });
 
-  win.loadURL("http://localhost:5173");
+  if (isDev) {
+    // ตอน dev
+    win.loadURL("http://localhost:5173");
+    win.webContents.openDevTools();
+  } else {
+    // ตอน build exe
+    win.loadFile(path.join(__dirname, "../dist/index.html"));
+  }
+  win.webContents.openDevTools();
 }
 
 app.whenReady().then(createWindow);
@@ -57,4 +67,9 @@ ipcMain.handle("order:create", (event, cart) => {
   transaction(cart);
 
   return { success: true };
+});
+
+ipcMain.handle("products:getAll", () => {
+  const products = db.prepare("SELECT * FROM products").all();
+  return products;
 });
