@@ -1,9 +1,21 @@
 import Database from "better-sqlite3";
+import path from "path";
+import fs from "fs";
 
-const db = new Database("pos.db");
+const dataDir = path.join(process.cwd(), "data");
 
-db.prepare(
-  `
+if (!fs.existsSync(dataDir)) {
+  fs.mkdirSync(dataDir);
+}
+
+const dbPath = path.join(dataDir, "pos.db");
+
+const db = new Database(dbPath);
+
+db.pragma("journal_mode = WAL");
+db.pragma("foreign_keys = ON");
+
+db.prepare(`
 CREATE TABLE IF NOT EXISTS products (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   name TEXT,
@@ -11,21 +23,17 @@ CREATE TABLE IF NOT EXISTS products (
   price REAL,
   stock INTEGER
 )
-`
-).run();
+`).run();
 
-db.prepare(
-  `
+db.prepare(`
 CREATE TABLE IF NOT EXISTS orders (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   total REAL,
   created_at TEXT
 )
-`
-).run();
+`).run();
 
-db.prepare(
-  `
+db.prepare(`
 CREATE TABLE IF NOT EXISTS order_items (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   order_id INTEGER,
@@ -33,7 +41,6 @@ CREATE TABLE IF NOT EXISTS order_items (
   quantity INTEGER,
   price REAL
 )
-`
-).run();
+`).run();
 
 export default db;
