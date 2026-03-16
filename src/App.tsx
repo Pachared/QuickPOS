@@ -1,0 +1,26 @@
+import { Box } from "@mui/material";
+import { Routes, Route } from "react-router-dom";
+
+import Sidebar from "./components/Sidebar";
+
+import POS from "./pages/POS";
+import Products from "./pages/Products";
+import Orders from "./pages/Orders";
+import Settings from "./pages/Settings";
+
+export default function App() {
+  return (
+    <Box sx={{ display: "flex" }}>
+      <Sidebar />
+
+      <Box sx={{ flexGrow: 1, p: 3 }}>
+        <Routes>
+          <Route path="/" element={<POS />} />
+          <Route path="/products" element={<Products />} />
+          <Route path="/orders" element={<Orders />} />
+          <Route path="/settings" element={<Settings />} />
+        </Routes>
+      </Box>
+    </Box>
+  );
+}
