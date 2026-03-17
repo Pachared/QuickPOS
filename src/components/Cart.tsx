@@ -25,7 +25,7 @@ interface Props {
   removeItem: (id: number) => void;
 }
 
-const drawerWidth = 400;
+const drawerWidth = 300;
 
 export default function Cart({ cart, removeItem }: Props) {
   const total = cart.reduce((sum, item) => sum + item.price * item.qty, 0);

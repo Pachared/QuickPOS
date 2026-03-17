@@ -18,10 +18,24 @@ export default function App() {
   };
 
   return (
-    <Box sx={{ display: "flex" }}>
+    <Box
+      sx={{
+        display: "flex",
+        minHeight: "100vh",
+        backgroundColor: "#EEEEEE"
+      }}>
+      {/* Sidebar */}
       <Sidebar />
 
-      <Box sx={{ flexGrow: 1, p: 3 }}>
+      {/* Main Content */}
+      <Box
+        sx={{
+          flexGrow: 1,
+          ml: "120px",
+          mr: "320px",
+          p: 3,
+        }}
+      >
         <Routes>
           <Route path="/" element={<POS cart={cart} setCart={setCart} />} />
           <Route path="/products" element={<Products />} />
@@ -29,7 +43,6 @@ export default function App() {
           <Route path="/settings" element={<Settings />} />
         </Routes>
       </Box>
-
       <Cart cart={cart} removeItem={removeItem} />
     </Box>
   );

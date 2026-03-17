@@ -9,8 +9,9 @@ const sqlite_1 = __importDefault(require("./database/sqlite"));
 const isDev = !electron_1.app.isPackaged;
 function createWindow() {
     const win = new electron_1.BrowserWindow({
-        width: 1200,
-        height: 800,
+        width: 1920,
+        height: 1080,
+        backgroundColor: "#EEEEEE",
         webPreferences: {
             preload: path_1.default.join(__dirname, "preload.js"),
         },
