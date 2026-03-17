@@ -1,136 +1,147 @@
+"use client";
+
 import {
   Drawer,
-  List,
-  IconButton,
-  Toolbar,
   Box,
   Typography,
   Divider,
-  Paper,
   Stack,
-  Chip,
+  Paper,
+  IconButton,
+  Button,
 } from "@mui/material";
-
 import DeleteIcon from "@mui/icons-material/Delete";
 
-interface CartItem {
-  id: number;
-  name: string;
-  price: number;
-  qty: number;
-}
+const drawerWidth = 320;
 
-interface Props {
-  cart: CartItem[];
-  removeItem: (id: number) => void;
-}
+export default function Cart({ cart, removeItem }: any) {
+  const total = cart.reduce((s: number, i: any) => s + i.price * i.qty, 0);
 
-const drawerWidth = 300;
+  const handleCheckout = () => {
+    if (cart.length === 0) {
+      alert("ไม่มีสินค้าในตะกร้า");
+      return;
+    }
 
-export default function Cart({ cart, removeItem }: Props) {
-  const total = cart.reduce((sum, item) => sum + item.price * item.qty, 0);
+    // 🔥 ตรงนี้เอาไปต่อ API / save DB ได้
+    console.log("Checkout:", cart);
+
+    alert("ชำระเงินสำเร็จ!");
+  };
 
   return (
     <Drawer
       variant="permanent"
       anchor="right"
       sx={{
-        width: drawerWidth,
-        flexShrink: 0,
         "& .MuiDrawer-paper": {
           width: drawerWidth,
-          boxSizing: "border-box",
-          borderLeft: "1px solid #eee",
-          background: "#fafafa",
+          marginRight: "16px",
+          marginTop: "16px",
+          marginBottom: "16px",
+          height: "calc(100% - 32px)",
+          borderRadius: "25px",
+          border: "1px solid #e5e7eb",
+          background: "#fff",
+          boxShadow: "0 10px 30px rgba(0,0,0,0.05)",
+          display: "flex",
+          flexDirection: "column",
         },
       }}
     >
-      <Toolbar />
-
       {/* Header */}
-      <Box sx={{ px: 3, py: 2 }}>
-        <Typography fontSize={20} fontWeight={700}>
-          Cart
-        </Typography>
-
-        <Typography fontSize={13} color="text.secondary">
-          {cart.length} items
-        </Typography>
-      </Box>
-
-      <Divider />
-
-      {/* Cart Items */}
-      <Box
-        sx={{
-          flex: 1,
-          overflowY: "auto",
-          px: 2,
-          py: 2,
-        }}
-      >
-        <List disablePadding>
-          {cart.map((item) => (
-            <Paper
-              key={item.id}
-              elevation={0}
-              sx={{
-                p: 2,
-                mb: 1.5,
-                borderRadius: 3,
-                border: "1px solid #eee",
-                background: "#fff",
-              }}
-            >
-              <Stack direction="row" justifyContent="space-between">
-                <Box>
-                  <Typography fontWeight={600}>{item.name}</Typography>
-
-                  <Typography
-                    fontSize={13}
-                    color="text.secondary"
-                    sx={{ mt: 0.3 }}
-                  >
-                    ฿{item.price.toLocaleString()}
-                  </Typography>
-
-                  <Chip
-                    size="small"
-                    label={`Qty: ${item.qty}`}
-                    sx={{ mt: 1 }}
-                  />
-                </Box>
-
-                <IconButton
-                  size="small"
-                  onClick={() => removeItem(item.id)}
-                  sx={{
-                    bgcolor: "#f5f5f5",
-                    "&:hover": {
-                      bgcolor: "#ffebee",
-                      color: "#d32f2f",
-                    },
-                  }}
-                >
-                  <DeleteIcon fontSize="small" />
-                </IconButton>
-              </Stack>
-            </Paper>
-          ))}
-        </List>
-      </Box>
-
-      <Divider />
-
-      {/* Total */}
-      <Box sx={{ p: 3 }}>
-        <Stack direction="row" justifyContent="space-between">
-          <Typography fontWeight={600}>Total</Typography>
-
-          <Typography fontSize={20} fontWeight={700}>
-            ฿{total.toLocaleString()}
+      <Box p={3}>
+        <Box display="flex" justifyContent="center">
+          <Typography variant="h5" fontWeight={700}>
+            ตะกร้าสินค้า
           </Typography>
-        </Stack>
+        </Box>
+      </Box>
+
+      <Divider
+        sx={{
+          width: "100%",
+          borderStyle: "dashed",
+          borderColor: "#e5e7eb",
+          borderBottomWidth: "2px",
+        }}
+      />
+
+      {/* Items */}
+      <Box flex={1} overflow="auto" p={2}>
+        {cart.map((item: any) => (
+          <Paper
+            key={item.id}
+            sx={{
+              p: 2,
+              mb: 1,
+              borderRadius: 3,
+              border: "1px solid #eee",
+            }}
+          >
+            <Stack direction="row" justifyContent="space-between">
+              <Box>
+                <Typography fontWeight={600}>{item.name}</Typography>
+                <Typography fontSize={13} color="text.secondary">
+                  ฿{item.price} × {item.qty}
+                </Typography>
+              </Box>
+
+              <IconButton onClick={() => removeItem(item.id)}>
+                <DeleteIcon />
+              </IconButton>
+            </Stack>
+          </Paper>
+        ))}
+      </Box>
+
+      <Divider
+        sx={{
+          width: "100%",
+          borderStyle: "dashed",
+          borderColor: "#e5e7eb",
+          borderBottomWidth: "2px",
+        }}
+      />
+
+      {/* Total + Checkout */}
+      <Box p={2}>
+        <Box
+          sx={{
+            background: "#f3f4f6",
+            borderRadius: 4,
+            p: 2,
+          }}
+        >
+          <Stack direction="row" justifyContent="space-between">
+            <Typography fontSize={20} fontWeight={700}>
+              ราคา
+            </Typography>
+            <Typography fontSize={20} fontWeight={700}>
+              {total.toLocaleString()} บาท
+            </Typography>
+          </Stack>
+        </Box>
+
+        {/* ปุ่มชำระเงิน */}
+        <Button
+          variant="contained"
+          fullWidth
+          size="large"
+          onClick={handleCheckout}
+          sx={{
+            mt: 2,
+            borderRadius: 4,
+            py: 1.5,
+            fontWeight: 600,
+            background: "#111",
+            "&:hover": {
+              background: "#333",
+            },
+          }}
+        >
+          ชำระเงิน
+        </Button>
       </Box>
     </Drawer>
   );

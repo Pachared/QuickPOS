@@ -17,25 +17,21 @@ function createWindow() {
         },
     });
     if (isDev) {
-        // ตอน dev
         win.loadURL("http://localhost:5173");
         win.webContents.openDevTools();
     }
     else {
-        // ตอน build exe
         win.loadFile(path_1.default.join(__dirname, "../dist/index.html"));
     }
     win.webContents.openDevTools();
 }
 electron_1.app.whenReady().then(createWindow);
-/* ---------- Product Lookup ---------- */
 electron_1.ipcMain.handle("product:getByBarcode", (event, barcode) => {
     const product = sqlite_1.default
         .prepare("SELECT * FROM products WHERE barcode=?")
         .get(barcode);
     return product;
 });
-/* ---------- Save Order ---------- */
 electron_1.ipcMain.handle("order:create", (event, cart) => {
     const total = cart.reduce((sum, item) => sum + item.price * item.qty, 0);
     const order = sqlite_1.default

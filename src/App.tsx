@@ -24,16 +24,14 @@ export default function App() {
         minHeight: "100vh",
         backgroundColor: "#EEEEEE"
       }}>
-      {/* Sidebar */}
+
       <Sidebar />
 
-      {/* Main Content */}
       <Box
         sx={{
           flexGrow: 1,
-          ml: "120px",
-          mr: "320px",
-          p: 3,
+          ml: "40px",
+          mr: "360px",
         }}
       >
         <Routes>

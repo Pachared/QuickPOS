@@ -14,7 +14,7 @@ import {
 
 import PointOfSaleIcon from "@mui/icons-material/PointOfSale";
 import InventoryIcon from "@mui/icons-material/Inventory";
-import ReceiptLongIcon from "@mui/icons-material/ReceiptLong";
+import ReceiptIcon from "@mui/icons-material/Receipt";
 import SettingsIcon from "@mui/icons-material/Settings";
 
 import { useNavigate, useLocation } from "react-router-dom";
@@ -35,7 +35,7 @@ const mainMenu = [
   {
     name: "การขายทั้งหมด",
     path: "/orders",
-    icon: <ReceiptLongIcon />,
+    icon: <ReceiptIcon />,
   },
 ];
 
@@ -67,7 +67,7 @@ const buttonStyle = {
 
 const iconStyle = (active: boolean) => ({
   minWidth: "unset",
-  color: active ? "#311b92" : "#9ca3af",
+  color: active ? "#5e17eb" : "#9ca3af",
   justifyContent: "center",
 
   "& svg": {
@@ -98,6 +98,7 @@ export default function Sidebar() {
           display: "flex",
           flexDirection: "column",
           alignItems: "center",
+          overflow: "hidden",
         },
       }}
     >
@@ -107,12 +108,18 @@ export default function Sidebar() {
           width: "100%",
           display: "flex",
           justifyContent: "center",
-          py: "12px"
+          py: "25px",
         }}
       >
-        <Typography fontWeight={700} fontSize={16}>
-          POS
-        </Typography>
+        <Box
+          component="img"
+          src="/QuickPOS.png"
+          alt="QuickPOS"
+          sx={{
+            height: 35,
+            objectFit: "contain",
+          }}
+        />
       </Toolbar>
 
       <Divider
@@ -124,14 +131,15 @@ export default function Sidebar() {
         }}
       />
 
-      {/* 🔼 MAIN MENU (บน) */}
+      {/* MAIN MENU */}
       <List
         sx={{
-          p: 1.5,
+          p: 1,
           width: "100%",
           display: "flex",
           flexDirection: "column",
           alignItems: "center",
+          overflowY: "auto",
         }}
       >
         {mainMenu.map((item) => {
@@ -144,19 +152,17 @@ export default function Sidebar() {
                 selected={active}
                 sx={buttonStyle}
               >
-                <ListItemIcon sx={iconStyle(active)}>
-                  {item.icon}
-                </ListItemIcon>
+                <ListItemIcon sx={iconStyle(active)}>{item.icon}</ListItemIcon>
               </ListItemButton>
             </Tooltip>
           );
         })}
       </List>
 
-      {/* 🔽 ดันลงล่าง */}
+      {/* ดันลงล่าง */}
       <Box sx={{ flexGrow: 1 }} />
 
-      {/* 🔽 SETTINGS (ล่างสุด) */}
+      {/* SETTINGS */}
       <List
         sx={{
           pb: 1,
@@ -176,9 +182,7 @@ export default function Sidebar() {
                 selected={active}
                 sx={buttonStyle}
               >
-                <ListItemIcon sx={iconStyle(active)}>
-                  {item.icon}
-                </ListItemIcon>
+                <ListItemIcon sx={iconStyle(active)}>{item.icon}</ListItemIcon>
               </ListItemButton>
             </Tooltip>
           );

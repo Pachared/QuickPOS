@@ -15,19 +15,15 @@ function createWindow() {
   });
 
   if (isDev) {
-    // ตอน dev
     win.loadURL("http://localhost:5173");
     win.webContents.openDevTools();
   } else {
-    // ตอน build exe
     win.loadFile(path.join(__dirname, "../dist/index.html"));
   }
   win.webContents.openDevTools();
 }
 
 app.whenReady().then(createWindow);
-
-/* ---------- Product Lookup ---------- */
 
 ipcMain.handle("product:getByBarcode", (event, barcode) => {
   const product = db
@@ -36,8 +32,6 @@ ipcMain.handle("product:getByBarcode", (event, barcode) => {
 
   return product;
 });
-
-/* ---------- Save Order ---------- */
 
 ipcMain.handle("order:create", (event, cart) => {
   const total = cart.reduce(
