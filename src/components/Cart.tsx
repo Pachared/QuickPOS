@@ -28,8 +28,12 @@ import AccountBalanceRoundedIcon from "@mui/icons-material/AccountBalanceRounded
 import PrintRoundedIcon from "@mui/icons-material/PrintRounded";
 import QrCode2RoundedIcon from "@mui/icons-material/QrCode2Rounded";
 import PointOfSaleRoundedIcon from "@mui/icons-material/PointOfSaleRounded";
+import LocalAtmRoundedIcon from "@mui/icons-material/LocalAtmRounded";
+import AutoAwesomeRoundedIcon from "@mui/icons-material/AutoAwesomeRounded";
+import RestartAltRoundedIcon from "@mui/icons-material/RestartAltRounded";
 
 import type { CartItem, Order, OrderItem, PaymentMethod } from "../types/pos";
+import { formatCurrency } from "../utils/format";
 
 const drawerWidth = 360;
 const CASH_TYPES = [20, 50, 100, 500, 1000];
@@ -135,13 +139,6 @@ export default function Cart({
     }));
   };
 
-  const removeCashNote = (value: number) => {
-    setCashCounts((prev) => ({
-      ...prev,
-      [value]: Math.max((prev[value] || 0) - 1, 0),
-    }));
-  };
-
   const resetCash = () => {
     setCashCounts({
       20: 0,
@@ -150,6 +147,33 @@ export default function Cart({
       500: 0,
       1000: 0,
     });
+  };
+
+  const setExactCash = () => {
+    const sorted = [...CASH_TYPES].sort((a, b) => b - a);
+    let remain = total;
+
+    const nextCounts: Record<number, number> = {
+      20: 0,
+      50: 0,
+      100: 0,
+      500: 0,
+      1000: 0,
+    };
+
+    for (const note of sorted) {
+      const qty = Math.floor(remain / note);
+      if (qty > 0) {
+        nextCounts[note] = qty;
+        remain -= qty * note;
+      }
+    }
+
+    if (remain > 0) {
+      nextCounts[20] += Math.ceil(remain / 20);
+    }
+
+    setCashCounts(nextCounts);
   };
 
   const resetCheckoutState = () => {
@@ -176,7 +200,9 @@ export default function Cart({
   const playSuccessBeep = async () => {
     try {
       const AudioCtx =
-        window.AudioContext || (window as Window & { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
+        window.AudioContext ||
+        (window as Window & { webkitAudioContext?: typeof AudioContext })
+          .webkitAudioContext;
 
       if (!AudioCtx) return;
 
@@ -221,8 +247,8 @@ export default function Cart({
           <tr>
             <td class="name">${escapeHtml(item.name)}</td>
             <td class="qty">${item.qty}</td>
-            <td class="price">${price.toLocaleString()}</td>
-            <td class="subtotal">${subtotal.toLocaleString()}</td>
+            <td class="price">${formatCurrency(price)}</td>
+            <td class="subtotal">${formatCurrency(subtotal)}</td>
           </tr>
         `;
       })
@@ -324,10 +350,16 @@ export default function Cart({
           <div class="divider"></div>
 
           <div class="summary-row"><span>จำนวนสินค้า</span><span>${totalQty} ชิ้น</span></div>
-          <div class="summary-row total"><span>ยอดรวม</span><span>฿${total.toLocaleString()}</span></div>
+          <div class="summary-row total"><span>ยอดรวม</span><span>${formatCurrency(
+            total
+          )}</span></div>
           <div class="summary-row"><span>วิธีชำระ</span><span>${paidLabel}</span></div>
-          <div class="summary-row"><span>รับเงิน</span><span>฿${paidAmount.toLocaleString()}</span></div>
-          <div class="summary-row"><span>เงินทอน</span><span>฿${changeAmount.toLocaleString()}</span></div>
+          <div class="summary-row"><span>รับเงิน</span><span>${formatCurrency(
+            paidAmount
+          )}</span></div>
+          <div class="summary-row"><span>เงินทอน</span><span>${formatCurrency(
+            changeAmount
+          )}</span></div>
 
           <div class="divider"></div>
           <div class="footer">ขอบคุณที่ใช้บริการ</div>
@@ -362,10 +394,7 @@ export default function Cart({
 
     const order: Order = {
       id: Date.now(),
-      date: new Date()
-        .toLocaleString("sv-SE")
-        .replace("T", " ")
-        .slice(0, 16),
+      date: new Date().toLocaleString("sv-SE").replace("T", " ").slice(0, 16),
       items: totalQty,
       total,
       paymentMethod,
@@ -390,10 +419,9 @@ export default function Cart({
 
     alert(
       paymentMethod === "cash"
-        ? `ชำระเงินสำเร็จ\nรับเงิน ${received.toLocaleString()} บาท\nเงินทอน ${Math.max(
-            change,
-            0
-          ).toLocaleString()} บาท`
+        ? `ชำระเงินสำเร็จ\nรับเงิน ${formatCurrency(
+            received
+          )}\nเงินทอน ${formatCurrency(Math.max(change, 0))}`
         : "ชำระเงินสำเร็จ (โอนเงิน)"
     );
   };
@@ -415,7 +443,7 @@ export default function Cart({
             width: drawerWidth,
             m: 2,
             height: "calc(100% - 32px)",
-            borderRadius: "32px",
+            borderRadius: "25px",
             border: "1px solid #e5e7eb",
             background:
               "linear-gradient(180deg, #ffffff 0%, #fbfbfc 55%, #f9fafb 100%)",
@@ -429,7 +457,7 @@ export default function Cart({
         <Box
           sx={{
             p: 3,
-            borderRadius: "32px 32px 0 0",
+            borderRadius: "25px 25px 0 0",
             background:
               "linear-gradient(135deg, #111827 0%, #1f2937 55%, #374151 100%)",
             color: "#fff",
@@ -451,9 +479,6 @@ export default function Cart({
             <Box>
               <Typography variant="h6" fontWeight={800}>
                 ตะกร้าสินค้า
-              </Typography>
-              <Typography variant="body2" sx={{ opacity: 0.82 }}>
-                {totalQty} รายการในตะกร้า
               </Typography>
             </Box>
           </Stack>
@@ -547,7 +572,7 @@ export default function Cart({
                             color="text.secondary"
                             mt={0.6}
                           >
-                            ฿{Number(item.price).toLocaleString()} × {item.qty}
+                            {formatCurrency(Number(item.price))} × {item.qty}
                           </Typography>
                         </Box>
 
@@ -575,7 +600,7 @@ export default function Cart({
                           รวมรายการ
                         </Typography>
                         <Typography fontWeight={900}>
-                          ฿{subtotal.toLocaleString()}
+                          {formatCurrency(subtotal)}
                         </Typography>
                       </Stack>
                     </Box>
@@ -613,7 +638,7 @@ export default function Cart({
                 ยอดรวม
               </Typography>
               <Typography fontSize={22} fontWeight={900}>
-                ฿{total.toLocaleString()}
+                {formatCurrency(total)}
               </Typography>
             </Stack>
           </Box>
@@ -670,7 +695,14 @@ export default function Cart({
           ชำระเงิน
         </DialogTitle>
 
-        <DialogContent sx={{ p: 3 }}>
+        <DialogContent
+          sx={{
+            p: 3,
+            pb: paymentMethod === "cash" ? 2 : 3,
+            maxHeight: "65vh",
+            overflowY: "auto",
+          }}
+        >
           <Box
             sx={{
               mt: 1,
@@ -688,7 +720,7 @@ export default function Cart({
               <Box>
                 <Typography color="text.secondary">ยอดที่ต้องชำระ</Typography>
                 <Typography fontSize={28} fontWeight={900}>
-                  ฿{total.toLocaleString()}
+                  {formatCurrency(total)}
                 </Typography>
               </Box>
 
@@ -738,80 +770,136 @@ export default function Cart({
 
           {paymentMethod === "cash" && (
             <>
-              <Typography mb={1.2} fontWeight={800}>
-                นับแบงก์เงินสด
-              </Typography>
-
-              <Stack spacing={1.2}>
-                {CASH_TYPES.map((value) => (
-                  <Box
-                    key={value}
+              <Box
+                sx={{
+                  mb: 1.5,
+                  p: 2,
+                  borderRadius: 4,
+                  background:
+                    "linear-gradient(135deg, #f9fafb 0%, #f3f4f6 100%)",
+                  border: "1px solid #e5e7eb",
+                }}
+              >
+                <Stack direction="row" spacing={1.2} alignItems="center" mb={0.5}>
+                  <Avatar
                     sx={{
-                      p: 1.5,
-                      borderRadius: 4,
-                      border: "1px solid #e5e7eb",
-                      bgcolor: "#fff",
+                      width: 40,
+                      height: 40,
+                      borderRadius: 3,
+                      bgcolor: "#eef2ff",
+                      color: "#4338ca",
                     }}
                   >
-                    <Stack
-                      direction="row"
-                      justifyContent="space-between"
-                      alignItems="center"
-                    >
-                      <Box>
-                        <Typography fontWeight={900}>แบงก์ {value}</Typography>
-                        <Typography fontSize={13} color="text.secondary">
-                          รวม ฿{(value * cashCounts[value]).toLocaleString()}
-                        </Typography>
-                      </Box>
+                    <LocalAtmRoundedIcon />
+                  </Avatar>
 
-                      <Stack direction="row" spacing={1} alignItems="center">
-                        <Button
-                          variant="outlined"
-                          onClick={() => removeCashNote(value)}
-                          sx={{
-                            minWidth: 42,
-                            borderRadius: 3,
-                            fontWeight: 900,
-                          }}
-                        >
-                          -
-                        </Button>
-
-                        <Chip
-                          label={cashCounts[value]}
-                          sx={{
-                            minWidth: 46,
-                            borderRadius: 3,
-                            fontWeight: 900,
-                            bgcolor: "#f3f4f6",
-                          }}
-                        />
-
-                        <Button
-                          variant="contained"
-                          onClick={() => addCash(value)}
-                          sx={{
-                            minWidth: 42,
-                            borderRadius: 3,
-                            fontWeight: 900,
-                            background: "#111827",
-                          }}
-                        >
-                          +
-                        </Button>
-                      </Stack>
-                    </Stack>
+                  <Box>
+                    <Typography fontWeight={900} color="#111827">
+                      รับเงินสด
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary">
+                      แตะเลือกแบงก์เพื่อเพิ่มยอดรับเงินได้ทันที
+                    </Typography>
                   </Box>
-                ))}
-              </Stack>
+                </Stack>
+              </Box>
 
-              <Stack direction="row" spacing={1.2} mt={2}>
+              <Box
+                display="grid"
+                gridTemplateColumns={{ xs: "repeat(2, 1fr)", sm: "repeat(3, 1fr)" }}
+                gap={1.2}
+              >
+                {CASH_TYPES.map((value) => (
+                  <Button
+                    key={value}
+                    onClick={() => addCash(value)}
+                    sx={{
+                      position: "relative",
+                      borderRadius: 4,
+                      p: 1.6,
+                      minHeight: 88,
+                      textTransform: "none",
+                      color: "#111827",
+                      background:
+                        "linear-gradient(180deg, #ffffff 0%, #f9fafb 100%)",
+                      border: "1px solid #e5e7eb",
+                      boxShadow: "0 8px 18px rgba(15, 23, 42, 0.05)",
+                      display: "flex",
+                      flexDirection: "column",
+                      alignItems: "flex-start",
+                      justifyContent: "space-between",
+                      "&:hover": {
+                        background: "#ffffff",
+                        transform: "translateY(-2px)",
+                        boxShadow: "0 14px 24px rgba(15, 23, 42, 0.10)",
+                      },
+                    }}
+                  >
+                    <Typography fontSize={13} color="text.secondary" fontWeight={700}>
+                      แบงก์
+                    </Typography>
+
+                    <Typography fontSize={22} fontWeight={900}>
+                      {value}
+                    </Typography>
+
+                    {cashCounts[value] > 0 && (
+                      <Chip
+                        label={`${cashCounts[value]} ใบ`}
+                        size="small"
+                        sx={{
+                          position: "absolute",
+                          top: 10,
+                          right: 10,
+                          borderRadius: 999,
+                          fontWeight: 800,
+                          bgcolor: "#111827",
+                          color: "#fff",
+                        }}
+                      />
+                    )}
+                  </Button>
+                ))}
+              </Box>
+
+              <Stack direction={{ xs: "column", sm: "row" }} spacing={1.2} mt={2}>
+                <Button
+                  fullWidth
+                  variant="contained"
+                  startIcon={<AutoAwesomeRoundedIcon />}
+                  onClick={setExactCash}
+                  sx={{
+                    borderRadius: 3,
+                    py: 1.2,
+                    fontWeight: 800,
+                    textTransform: "none",
+                    background: "linear-gradient(135deg, #111827 0%, #000 100%)",
+                    "&:hover": {
+                      background:
+                        "linear-gradient(135deg, #000 0%, #111827 100%)",
+                    },
+                  }}
+                >
+                  รับเงินพอดี
+                </Button>
+
                 <Button
                   fullWidth
                   variant="outlined"
+                  startIcon={<RestartAltRoundedIcon />}
                   onClick={resetCash}
-                  sx={{ borderRadius: 3, py: 1.2, fontWeight: 800 }}
+                  sx={{
+                    borderRadius: 3,
+                    py: 1.2,
+                    fontWeight: 800,
+                    textTransform: "none",
+                    borderColor: "#d1d5db",
+                    color: "#111827",
+                    "&:hover": {
+                      borderColor: "#9ca3af",
+                      background: "#f9fafb",
+                    },
+                  }}
                 >
                   ล้างเงินสด
                 </Button>
@@ -823,34 +911,37 @@ export default function Cart({
                   p: 2,
                   borderRadius: 4,
                   border: "1px solid #e5e7eb",
-                  background: change >= 0 ? "#f0fdf4" : "#fef2f2",
+                  background: "#fff",
                 }}
               >
-                <Stack direction="row" justifyContent="space-between" mb={1}>
-                  <Typography color="text.secondary">รับเงิน</Typography>
-                  <Typography fontWeight={800}>
-                    ฿{received.toLocaleString()}
-                  </Typography>
-                </Stack>
+                <Typography fontWeight={800} mb={1.2}>
+                  สรุปแบงก์ที่รับ
+                </Typography>
 
-                <Stack direction="row" justifyContent="space-between" mb={1}>
-                  <Typography color="text.secondary">ยอดชำระ</Typography>
-                  <Typography fontWeight={800}>
-                    ฿{total.toLocaleString()}
-                  </Typography>
-                </Stack>
-
-                <Stack direction="row" justifyContent="space-between">
-                  <Typography fontSize={18} fontWeight={900}>
-                    {change >= 0 ? "เงินทอน" : "ขาดอีก"}
-                  </Typography>
-                  <Typography
-                    fontSize={20}
-                    fontWeight={900}
-                    color={change >= 0 ? "success.main" : "error.main"}
-                  >
-                    ฿{Math.abs(change).toLocaleString()}
-                  </Typography>
+                <Stack spacing={1}>
+                  {CASH_TYPES.some((value) => cashCounts[value] > 0) ? (
+                    CASH_TYPES.filter((value) => cashCounts[value] > 0).map(
+                      (value) => (
+                        <Stack
+                          key={value}
+                          direction="row"
+                          justifyContent="space-between"
+                          alignItems="center"
+                        >
+                          <Typography color="text.secondary">
+                            {value} × {cashCounts[value]}
+                          </Typography>
+                          <Typography fontWeight={800}>
+                            {formatCurrency(value * cashCounts[value])}
+                          </Typography>
+                        </Stack>
+                      )
+                    )
+                  ) : (
+                    <Typography variant="body2" color="text.secondary">
+                      ยังไม่ได้เลือกแบงก์
+                    </Typography>
+                  )}
                 </Stack>
               </Box>
             </>
@@ -912,7 +1003,7 @@ export default function Cart({
                     พร้อมเพย์: {PROMPTPAY_ID}
                   </Typography>
                   <Typography variant="body2" color="text.secondary" mb={2}>
-                    จำนวนเงิน: ฿{total.toLocaleString()}
+                    จำนวนเงิน: {formatCurrency(total)}
                   </Typography>
 
                   <Box
@@ -923,11 +1014,7 @@ export default function Cart({
                       border: "1px solid #bfdbfe",
                     }}
                   >
-                    <Typography
-                      fontSize={13}
-                      color="#1d4ed8"
-                      fontWeight={700}
-                    >
+                    <Typography fontSize={13} color="#1d4ed8" fontWeight={700}>
                       สแกน QR แล้วกด “ยืนยันการชำระเงิน”
                     </Typography>
                   </Box>
@@ -937,66 +1024,123 @@ export default function Cart({
           )}
         </DialogContent>
 
-        <DialogActions sx={{ px: 3, pb: 3, gap: 1, flexWrap: "wrap" }}>
-          {!paid ? (
-            <>
-              <Button
-                onClick={handleCloseCheckout}
-                sx={{
-                  borderRadius: 3,
-                  px: 2.5,
-                  fontWeight: 700,
-                }}
-              >
-                ยกเลิก
-              </Button>
+        <DialogActions
+          sx={{
+            px: 3,
+            pb: 3,
+            pt: 2,
+            display: "block",
+            position: "sticky",
+            bottom: 0,
+            background: "#fff",
+            borderTop: "1px solid #e5e7eb",
+            zIndex: 2,
+          }}
+        >
+          {paymentMethod === "cash" && (
+            <Box
+              sx={{
+                mb: 2,
+                p: 2,
+                borderRadius: 4,
+                border: "1px solid #e5e7eb",
+                background: change >= 0 ? "#f0fdf4" : "#fef2f2",
+              }}
+            >
+              <Stack direction="row" justifyContent="space-between" mb={1}>
+                <Typography color="text.secondary">รับเงิน</Typography>
+                <Typography fontWeight={800}>
+                  {formatCurrency(received)}
+                </Typography>
+              </Stack>
 
-              <Button
-                variant="contained"
-                onClick={handleConfirmPayment}
-                disabled={paymentMethod === "cash" && !isEnoughCash}
-                sx={{
-                  borderRadius: 3,
-                  px: 2.5,
-                  fontWeight: 800,
-                  textTransform: "none",
-                  background: "#111827",
-                }}
-              >
-                ยืนยันการชำระเงิน
-              </Button>
-            </>
-          ) : (
-            <>
-              <Button
-                variant="outlined"
-                startIcon={<PrintRoundedIcon />}
-                onClick={handlePrintReceipt}
-                sx={{
-                  borderRadius: 3,
-                  px: 2.5,
-                  fontWeight: 800,
-                  textTransform: "none",
-                }}
-              >
-                พิมพ์ใบเสร็จ
-              </Button>
+              <Stack direction="row" justifyContent="space-between" mb={1}>
+                <Typography color="text.secondary">ยอดชำระ</Typography>
+                <Typography fontWeight={800}>
+                  {formatCurrency(total)}
+                </Typography>
+              </Stack>
 
-              <Button
-                variant="contained"
-                onClick={handleFinishSale}
-                sx={{
-                  borderRadius: 3,
-                  px: 2.5,
-                  fontWeight: 800,
-                  textTransform: "none",
-                  background: "#111827",
-                }}
+              <Stack
+                direction="row"
+                justifyContent="space-between"
+                alignItems="center"
               >
-                จบการขาย
-              </Button>
-            </>
+                <Typography fontSize={18} fontWeight={900}>
+                  {change >= 0 ? "เงินทอน" : "ขาดอีก"}
+                </Typography>
+                <Typography
+                  fontSize={22}
+                  fontWeight={900}
+                  color={change >= 0 ? "success.main" : "error.main"}
+                >
+                  {formatCurrency(Math.abs(change))}
+                </Typography>
+              </Stack>
+            </Box>
           )}
+
+          <Stack direction="row" spacing={1} justifyContent="flex-end" flexWrap="wrap">
+            {!paid ? (
+              <>
+                <Button
+                  onClick={handleCloseCheckout}
+                  sx={{
+                    borderRadius: 3,
+                    px: 2.5,
+                    fontWeight: 700,
+                  }}
+                >
+                  ยกเลิก
+                </Button>
+
+                <Button
+                  variant="contained"
+                  onClick={handleConfirmPayment}
+                  disabled={paymentMethod === "cash" && !isEnoughCash}
+                  sx={{
+                    borderRadius: 3,
+                    px: 2.5,
+                    fontWeight: 800,
+                    textTransform: "none",
+                    background: "#111827",
+                  }}
+                >
+                  ยืนยันการชำระเงิน
+                </Button>
+              </>
+            ) : (
+              <>
+                <Button
+                  variant="outlined"
+                  startIcon={<PrintRoundedIcon />}
+                  onClick={handlePrintReceipt}
+                  sx={{
+                    borderRadius: 3,
+                    px: 2.5,
+                    fontWeight: 800,
+                    textTransform: "none",
+                  }}
+                >
+                  พิมพ์ใบเสร็จ
+                </Button>
+
+                <Button
+                  variant="contained"
+                  onClick={handleFinishSale}
+                  sx={{
+                    borderRadius: 3,
+                    px: 2.5,
+                    fontWeight: 800,
+                    textTransform: "none",
+                    background: "#111827",
+                  }}
+                >
+                  จบการขาย
+                </Button>
+              </>
+            )}
+          </Stack>
         </DialogActions>
       </Dialog>
     </>
