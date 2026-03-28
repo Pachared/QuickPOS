@@ -77,7 +77,7 @@ export default function App() {
       <Box
         sx={{
           flexGrow: 1,
-          ml: "40px",
+          ml: "20px",
           mr: "380px",
           p: 2,
         }}
