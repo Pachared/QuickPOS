@@ -33,6 +33,8 @@ import SellRoundedIcon from "@mui/icons-material/SellRounded";
 import SearchRoundedIcon from "@mui/icons-material/SearchRounded";
 import WarningAmberRoundedIcon from "@mui/icons-material/WarningAmberRounded";
 
+import { formatCurrency } from "../utils/format";
+
 interface Product {
   id: number;
   name: string;
@@ -126,12 +128,9 @@ export default function Products() {
   return (
     <Box
       sx={{
-        p: { xs: 2, md: 3 },
         minHeight: "100%",
-        background: "linear-gradient(180deg, #fafafa 0%, #f4f6f8 100%)",
       }}
     >
-      {/* Header */}
       <Box
         sx={{
           mb: 3,
@@ -208,7 +207,6 @@ export default function Products() {
         </Stack>
       </Box>
 
-      {/* Search */}
       <Paper
         elevation={0}
         sx={{
@@ -241,7 +239,6 @@ export default function Products() {
         />
       </Paper>
 
-      {/* Table */}
       <Paper
         elevation={0}
         sx={{
@@ -336,7 +333,7 @@ export default function Products() {
                   <TableCell>
                     <Chip
                       icon={<SellRoundedIcon />}
-                      label={`฿${p.price.toLocaleString()}`}
+                      label={formatCurrency(p.price)}
                       sx={{
                         borderRadius: 999,
                         fontWeight: 800,
@@ -446,7 +443,6 @@ export default function Products() {
         </Box>
       </Paper>
 
-      {/* Dialog เพิ่ม/แก้ไขสินค้า */}
       <Dialog
         open={openForm}
         onClose={() => setOpenForm(false)}
@@ -509,14 +505,17 @@ export default function Products() {
                 })
               }
               fullWidth
+              helperText={
+                form.price > 0 ? `ตัวอย่าง: ${formatCurrency(form.price)}` : ""
+              }
               sx={{
                 "& .MuiOutlinedInput-root": {
                   borderRadius: 4,
                 },
               }}
               InputProps={{
-                startAdornment: (
-                  <InputAdornment position="start">฿</InputAdornment>
+                endAdornment: (
+                  <InputAdornment position="end">บาท</InputAdornment>
                 ),
               }}
             />
@@ -556,7 +555,6 @@ export default function Products() {
         </DialogActions>
       </Dialog>
 
-      {/* Dialog ยืนยันลบ */}
       <Dialog
         open={openDelete}
         onClose={() => setOpenDelete(false)}
