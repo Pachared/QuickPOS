@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import {
   Box,
   Typography,
@@ -15,49 +15,45 @@ import {
   FormControlLabel,
   Divider,
   Paper,
-  Chip,
   Snackbar,
   Alert,
 } from "@mui/material";
 
 import SettingsRoundedIcon from "@mui/icons-material/SettingsRounded";
-import StoreRoundedIcon from "@mui/icons-material/StoreRounded";
 import ReceiptLongRoundedIcon from "@mui/icons-material/ReceiptLongRounded";
 import PaymentsRoundedIcon from "@mui/icons-material/PaymentsRounded";
 import PrintRoundedIcon from "@mui/icons-material/PrintRounded";
 import SaveRoundedIcon from "@mui/icons-material/SaveRounded";
 import RestartAltRoundedIcon from "@mui/icons-material/RestartAltRounded";
+import QrCode2RoundedIcon from "@mui/icons-material/QrCode2Rounded";
+import CampaignRoundedIcon from "@mui/icons-material/CampaignRounded";
 
 type PosSettings = {
-  shopName: string;
-  shopAddress: string;
-  shopPhone: string;
-  taxId: string;
-  currency: "THB" | "USD" | "EUR";
-  vat: number;
   receiptFooter: string;
+  receiptHeaderNote: string;
+  printerPaperSize: "58mm" | "80mm";
+  copyCount: number;
   promptPayId: string;
   enableCash: boolean;
   enableTransfer: boolean;
   autoPrintReceipt: boolean;
-  printerPaperSize: "58mm" | "80mm";
+  showPrintPreview: boolean;
+  soundOnCheckout: boolean;
 };
 
 const STORAGE_KEY = "quickpos_settings";
 
 const defaultSettings: PosSettings = {
-  shopName: "ร้านของฉัน",
-  shopAddress: "",
-  shopPhone: "",
-  taxId: "",
-  currency: "THB",
-  vat: 7,
   receiptFooter: "ขอบคุณที่ใช้บริการ",
+  receiptHeaderNote: "ใบเสร็จรับเงิน / ใบกำกับอย่างย่อ",
+  printerPaperSize: "80mm",
+  copyCount: 1,
   promptPayId: "",
   enableCash: true,
   enableTransfer: true,
   autoPrintReceipt: false,
-  printerPaperSize: "80mm",
+  showPrintPreview: true,
+  soundOnCheckout: true,
 };
 
 export default function Settings() {
@@ -74,12 +70,6 @@ export default function Settings() {
       console.error("โหลด settings ไม่สำเร็จ:", error);
     }
   }, []);
-
-  const currencyLabel = useMemo(() => {
-    if (settings.currency === "THB") return "บาท (฿)";
-    if (settings.currency === "USD") return "ดอลลาร์ ($)";
-    return "ยูโร (€)";
-  }, [settings.currency]);
 
   const saveSettings = () => {
     try {
@@ -103,9 +93,7 @@ export default function Settings() {
   return (
     <Box
       sx={{
-        p: { xs: 2, md: 3 },
         minHeight: "100%",
-        background: "linear-gradient(180deg, #fafafa 0%, #f4f6f8 100%)",
       }}
     >
       {/* Header */}
@@ -120,45 +108,27 @@ export default function Settings() {
           boxShadow: "0 18px 34px rgba(15, 23, 42, 0.14)",
         }}
       >
-        <Stack
-          direction={{ xs: "column", md: "row" }}
-          spacing={2}
-          justifyContent="space-between"
-          alignItems={{ xs: "flex-start", md: "center" }}
-        >
-          <Stack direction="row" spacing={1.5} alignItems="center">
-            <Avatar
-              sx={{
-                width: 52,
-                height: 52,
-                borderRadius: 3,
-                bgcolor: "rgba(255,255,255,0.12)",
-                border: "1px solid rgba(255,255,255,0.15)",
-              }}
-            >
-              <SettingsRoundedIcon />
-            </Avatar>
-
-            <Box>
-              <Typography variant="h5" fontWeight={800}>
-                ตั้งค่าระบบ
-              </Typography>
-              <Typography variant="body2" sx={{ opacity: 0.82 }}>
-                สำหรับโปรแกรมขายหน้าร้านแบบออฟไลน์ / desktop POS
-              </Typography>
-            </Box>
-          </Stack>
-
-          <Chip
-            label={`สกุลเงิน: ${currencyLabel}`}
+        <Stack direction="row" spacing={1.5} alignItems="center">
+          <Avatar
             sx={{
-              borderRadius: 999,
-              fontWeight: 700,
-              color: "#fff",
+              width: 52,
+              height: 52,
+              borderRadius: 3,
               bgcolor: "rgba(255,255,255,0.12)",
-              border: "1px solid rgba(255,255,255,0.14)",
+              border: "1px solid rgba(255,255,255,0.15)",
             }}
-          />
+          >
+            <SettingsRoundedIcon />
+          </Avatar>
+
+          <Box>
+            <Typography variant="h5" fontWeight={800}>
+              ตั้งค่าระบบ
+            </Typography>
+            <Typography variant="body2" sx={{ opacity: 0.82 }}>
+              ตั้งค่าการพิมพ์ การชำระเงิน และตัวเลือกการใช้งานสำหรับเครื่องขายหน้าร้าน
+            </Typography>
+          </Box>
         </Stack>
       </Box>
 
@@ -169,77 +139,7 @@ export default function Settings() {
       >
         {/* Left */}
         <Stack spacing={2}>
-          {/* Store info */}
-          <Card
-            elevation={0}
-            sx={{
-              borderRadius: 5,
-              border: "1px solid #e5e7eb",
-              boxShadow: "0 10px 28px rgba(15, 23, 42, 0.06)",
-            }}
-          >
-            <CardContent sx={{ p: 0 }}>
-              <SectionHeader
-                icon={<StoreRoundedIcon />}
-                title="ข้อมูลร้าน"
-                subtitle="ข้อมูลพื้นฐานที่ใช้แสดงในระบบและบนใบเสร็จ"
-              />
-
-              <Box sx={{ p: 3 }}>
-                <Stack spacing={2.2}>
-                  <TextField
-                    label="ชื่อร้าน"
-                    value={settings.shopName}
-                    onChange={(e) =>
-                      setSettings({ ...settings, shopName: e.target.value })
-                    }
-                    fullWidth
-                    sx={inputSx}
-                  />
-
-                  <TextField
-                    label="ที่อยู่ร้าน"
-                    multiline
-                    rows={3}
-                    value={settings.shopAddress}
-                    onChange={(e) =>
-                      setSettings({ ...settings, shopAddress: e.target.value })
-                    }
-                    fullWidth
-                    sx={inputSx}
-                  />
-
-                  <Box
-                    display="grid"
-                    gridTemplateColumns={{ xs: "1fr", md: "1fr 1fr" }}
-                    gap={2}
-                  >
-                    <TextField
-                      label="เบอร์โทรร้าน"
-                      value={settings.shopPhone}
-                      onChange={(e) =>
-                        setSettings({ ...settings, shopPhone: e.target.value })
-                      }
-                      fullWidth
-                      sx={inputSx}
-                    />
-
-                    <TextField
-                      label="เลขประจำตัวผู้เสียภาษี"
-                      value={settings.taxId}
-                      onChange={(e) =>
-                        setSettings({ ...settings, taxId: e.target.value })
-                      }
-                      fullWidth
-                      sx={inputSx}
-                    />
-                  </Box>
-                </Stack>
-              </Box>
-            </CardContent>
-          </Card>
-
-          {/* Receipt */}
+          {/* Receipt settings */}
           <Card
             elevation={0}
             sx={{
@@ -252,7 +152,7 @@ export default function Settings() {
               <SectionHeader
                 icon={<ReceiptLongRoundedIcon />}
                 title="ตั้งค่าใบเสร็จ"
-                subtitle="ข้อมูลการพิมพ์และข้อความท้ายใบเสร็จ"
+                subtitle="กำหนดรูปแบบการพิมพ์และข้อความที่แสดงบนใบเสร็จ"
               />
 
               <Box sx={{ p: 3 }}>
@@ -281,22 +181,35 @@ export default function Settings() {
 
                     <TextField
                       select
-                      label="สกุลเงิน"
-                      value={settings.currency}
+                      label="จำนวนชุดที่พิมพ์"
+                      value={settings.copyCount}
                       onChange={(e) =>
                         setSettings({
                           ...settings,
-                          currency: e.target.value as "THB" | "USD" | "EUR",
+                          copyCount: Number(e.target.value),
                         })
                       }
                       fullWidth
                       sx={inputSx}
                     >
-                      <MenuItem value="THB">บาท (฿)</MenuItem>
-                      <MenuItem value="USD">ดอลลาร์ ($)</MenuItem>
-                      <MenuItem value="EUR">ยูโร (€)</MenuItem>
+                      <MenuItem value={1}>1 ชุด</MenuItem>
+                      <MenuItem value={2}>2 ชุด</MenuItem>
+                      <MenuItem value={3}>3 ชุด</MenuItem>
                     </TextField>
                   </Box>
+
+                  <TextField
+                    label="ข้อความหัวใบเสร็จ"
+                    value={settings.receiptHeaderNote}
+                    onChange={(e) =>
+                      setSettings({
+                        ...settings,
+                        receiptHeaderNote: e.target.value,
+                      })
+                    }
+                    fullWidth
+                    sx={inputSx}
+                  />
 
                   <TextField
                     label="ข้อความท้ายใบเสร็จ"
@@ -330,43 +243,38 @@ export default function Settings() {
               <SectionHeader
                 icon={<PaymentsRoundedIcon />}
                 title="การชำระเงิน"
-                subtitle="ตั้งค่าวิธีรับชำระและภาษีมูลค่าเพิ่ม"
+                subtitle="เลือกวิธีชำระเงินที่ต้องการเปิดใช้ในระบบ"
               />
 
               <Box sx={{ p: 3 }}>
                 <Stack spacing={2.2}>
-                  <Box
-                    display="grid"
-                    gridTemplateColumns={{ xs: "1fr", md: "1fr 1fr" }}
-                    gap={2}
-                  >
-                    <TextField
-                      label="VAT (%)"
-                      type="number"
-                      value={settings.vat}
-                      onChange={(e) =>
-                        setSettings({
-                          ...settings,
-                          vat: Number(e.target.value),
-                        })
-                      }
-                      fullWidth
-                      sx={inputSx}
-                    />
-
-                    <TextField
-                      label="พร้อมเพย์ / เบอร์รับโอน"
-                      value={settings.promptPayId}
-                      onChange={(e) =>
-                        setSettings({
-                          ...settings,
-                          promptPayId: e.target.value,
-                        })
-                      }
-                      fullWidth
-                      sx={inputSx}
-                    />
-                  </Box>
+                  <TextField
+                    label="พร้อมเพย์ / เบอร์รับโอน"
+                    value={settings.promptPayId}
+                    onChange={(e) =>
+                      setSettings({
+                        ...settings,
+                        promptPayId: e.target.value,
+                      })
+                    }
+                    fullWidth
+                    sx={inputSx}
+                    InputProps={{
+                      endAdornment: (
+                        <Avatar
+                          sx={{
+                            width: 30,
+                            height: 30,
+                            borderRadius: 2,
+                            bgcolor: "#f3f4f6",
+                            color: "#6b7280",
+                          }}
+                        >
+                          <QrCode2RoundedIcon sx={{ fontSize: 18 }} />
+                        </Avatar>
+                      ),
+                    }}
+                  />
 
                   <Paper
                     elevation={0}
@@ -413,6 +321,85 @@ export default function Settings() {
               </Box>
             </CardContent>
           </Card>
+
+          {/* Desktop options */}
+          <Card
+            elevation={0}
+            sx={{
+              borderRadius: 5,
+              border: "1px solid #e5e7eb",
+              boxShadow: "0 10px 28px rgba(15, 23, 42, 0.06)",
+            }}
+          >
+            <CardContent sx={{ p: 0 }}>
+              <SectionHeader
+                icon={<PrintRoundedIcon />}
+                title="ตัวเลือกการใช้งาน"
+                subtitle="ตั้งค่าพฤติกรรมของโปรแกรมเวลาขายหน้าร้าน"
+              />
+
+              <Box sx={{ p: 3 }}>
+                <Stack spacing={1.2}>
+                  <Paper
+                    elevation={0}
+                    sx={{
+                      p: 2,
+                      borderRadius: 4,
+                      border: "1px solid #e5e7eb",
+                      background: "#fff",
+                    }}
+                  >
+                    <Stack spacing={0.5}>
+                      <FormControlLabel
+                        control={
+                          <Switch
+                            checked={settings.autoPrintReceipt}
+                            onChange={(e) =>
+                              setSettings({
+                                ...settings,
+                                autoPrintReceipt: e.target.checked,
+                              })
+                            }
+                          />
+                        }
+                        label="พิมพ์ใบเสร็จอัตโนมัติหลังชำระเงิน"
+                      />
+
+                      <FormControlLabel
+                        control={
+                          <Switch
+                            checked={settings.showPrintPreview}
+                            onChange={(e) =>
+                              setSettings({
+                                ...settings,
+                                showPrintPreview: e.target.checked,
+                              })
+                            }
+                          />
+                        }
+                        label="แสดงตัวอย่างก่อนพิมพ์"
+                      />
+
+                      <FormControlLabel
+                        control={
+                          <Switch
+                            checked={settings.soundOnCheckout}
+                            onChange={(e) =>
+                              setSettings({
+                                ...settings,
+                                soundOnCheckout: e.target.checked,
+                              })
+                            }
+                          />
+                        }
+                        label="เปิดเสียงแจ้งเตือนตอนชำระเงินสำเร็จ"
+                      />
+                    </Stack>
+                  </Paper>
+                </Stack>
+              </Box>
+            </CardContent>
+          </Card>
         </Stack>
 
         {/* Right */}
@@ -427,76 +414,61 @@ export default function Settings() {
           >
             <CardContent sx={{ p: 0 }}>
               <SectionHeader
-                icon={<PrintRoundedIcon />}
-                title="ตัวเลือกโปรแกรมเดสก์ท็อป"
-                subtitle="ตั้งค่าที่เหมาะกับการใช้งานหน้าร้าน"
+                icon={<CampaignRoundedIcon />}
+                title="สรุปการตั้งค่าปัจจุบัน"
+                subtitle="ภาพรวมของค่าที่ใช้งานอยู่ในระบบตอนนี้"
               />
 
               <Box sx={{ p: 3 }}>
-                <Stack spacing={1.2}>
-                  <Paper
-                    elevation={0}
-                    sx={{
-                      p: 2,
-                      borderRadius: 4,
-                      border: "1px solid #e5e7eb",
-                      background: "#fff",
-                    }}
-                  >
-                    <FormControlLabel
-                      control={
-                        <Switch
-                          checked={settings.autoPrintReceipt}
-                          onChange={(e) =>
-                            setSettings({
-                              ...settings,
-                              autoPrintReceipt: e.target.checked,
-                            })
-                          }
-                        />
-                      }
-                      label="พิมพ์ใบเสร็จอัตโนมัติหลังชำระเงิน"
+                <Paper
+                  elevation={0}
+                  sx={{
+                    p: 2,
+                    borderRadius: 4,
+                    border: "1px solid #e5e7eb",
+                    background:
+                      "linear-gradient(135deg, #f9fafb 0%, #f3f4f6 100%)",
+                  }}
+                >
+                  <Stack spacing={1}>
+                    <InfoRow
+                      label="ขนาดกระดาษ"
+                      value={settings.printerPaperSize}
                     />
-                  </Paper>
-
-                  <Paper
-                    elevation={0}
-                    sx={{
-                      p: 2,
-                      borderRadius: 4,
-                      border: "1px solid #e5e7eb",
-                      background:
-                        "linear-gradient(135deg, #f9fafb 0%, #f3f4f6 100%)",
-                    }}
-                  >
-                    <Typography fontWeight={800} mb={1}>
-                      สรุปการตั้งค่าปัจจุบัน
-                    </Typography>
-
-                    <Stack spacing={1}>
-                      <InfoRow label="ชื่อร้าน" value={settings.shopName || "-"} />
-                      <InfoRow label="สกุลเงิน" value={currencyLabel} />
-                      <InfoRow
-                        label="ภาษีมูลค่าเพิ่ม"
-                        value={`${settings.vat}%`}
-                      />
-                      <InfoRow
-                        label="ขนาดกระดาษ"
-                        value={settings.printerPaperSize}
-                      />
-                      <InfoRow
-                        label="เงินสด"
-                        value={settings.enableCash ? "เปิดใช้งาน" : "ปิดใช้งาน"}
-                      />
-                      <InfoRow
-                        label="โอนเงิน"
-                        value={
-                          settings.enableTransfer ? "เปิดใช้งาน" : "ปิดใช้งาน"
-                        }
-                      />
-                    </Stack>
-                  </Paper>
-                </Stack>
+                    <InfoRow
+                      label="จำนวนชุดที่พิมพ์"
+                      value={`${settings.copyCount} ชุด`}
+                    />
+                    <InfoRow
+                      label="เงินสด"
+                      value={settings.enableCash ? "เปิดใช้งาน" : "ปิดใช้งาน"}
+                    />
+                    <InfoRow
+                      label="โอนเงิน"
+                      value={
+                        settings.enableTransfer ? "เปิดใช้งาน" : "ปิดใช้งาน"
+                      }
+                    />
+                    <InfoRow
+                      label="พิมพ์อัตโนมัติ"
+                      value={
+                        settings.autoPrintReceipt ? "เปิดใช้งาน" : "ปิดใช้งาน"
+                      }
+                    />
+                    <InfoRow
+                      label="แสดงตัวอย่างก่อนพิมพ์"
+                      value={
+                        settings.showPrintPreview ? "เปิดใช้งาน" : "ปิดใช้งาน"
+                      }
+                    />
+                    <InfoRow
+                      label="เสียงแจ้งเตือน"
+                      value={
+                        settings.soundOnCheckout ? "เปิดใช้งาน" : "ปิดใช้งาน"
+                      }
+                    />
+                  </Stack>
+                </Paper>
               </Box>
             </CardContent>
           </Card>
@@ -515,7 +487,7 @@ export default function Settings() {
               </Typography>
 
               <Typography variant="body2" color="text.secondary" mb={2}>
-                การตั้งค่าจะถูกบันทึกไว้ในเครื่องนี้ เหมาะกับการใช้งานแบบออฟไลน์บนโปรแกรมเดสก์ท็อป
+                การตั้งค่าหน้านี้จะถูกบันทึกไว้ในเครื่องนี้ เหมาะสำหรับใช้งานแบบออฟไลน์บนโปรแกรมเดสก์ท็อป
               </Typography>
 
               <Stack direction={{ xs: "column", sm: "row" }} spacing={1.2}>
