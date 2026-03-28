@@ -11,13 +11,17 @@ import {
   Button,
   useMediaQuery,
   InputAdornment,
+  Paper,
+  Avatar,
 } from "@mui/material";
-import AddIcon from "@mui/icons-material/Add";
+import AddRoundedIcon from "@mui/icons-material/AddRounded";
 import QrCodeScannerRoundedIcon from "@mui/icons-material/QrCodeScannerRounded";
 import SearchRoundedIcon from "@mui/icons-material/SearchRounded";
 import LocalMallRoundedIcon from "@mui/icons-material/LocalMallRounded";
+import StorefrontRoundedIcon from "@mui/icons-material/StorefrontRounded";
 
 import type { CartItem } from "../types/pos";
+import { formatCurrency } from "../utils/format";
 
 interface Product {
   id: number;
@@ -35,7 +39,7 @@ interface Props {
 export default function POS({ cart, setCart }: Props) {
   const [barcode, setBarcode] = useState("");
   const [products, setProducts] = useState<Product[]>([]);
-  const [category, setCategory] = useState("All");
+  const [category, setCategory] = useState("ทั้งหมด");
 
   const isTablet = useMediaQuery("(max-width:1366px)");
   const isMobile = useMediaQuery("(max-width:768px)");
@@ -46,15 +50,15 @@ export default function POS({ cart, setCart }: Props) {
 
   const loadProducts = async () => {
     const mock: Product[] = [
-      { id: 1, name: "Chocolate Cake", price: 89, category: "Cakes" },
-      { id: 2, name: "Croissant", price: 45, category: "Pastry" },
-      { id: 3, name: "Vanilla Ice Cream", price: 69, category: "Ice Cream" },
-      { id: 4, name: "Banana Pancake", price: 79, category: "Pancakes" },
-      { id: 5, name: "Vegan Muffin", price: 59, category: "Vegan" },
-      { id: 6, name: "Strawberry Cake", price: 95, category: "Cakes" },
-      { id: 7, name: "Danish", price: 49, category: "Pastry" },
-      { id: 8, name: "Chocolate Ice Cream", price: 75, category: "Ice Cream" },
-      { id: 9, name: "Blueberry Pancake", price: 85, category: "Pancakes" },
+      { id: 1, name: "เค้กช็อกโกแลต", price: 89, category: "เค้ก" },
+      { id: 2, name: "ครัวซองต์", price: 45, category: "เบเกอรี่" },
+      { id: 3, name: "ไอศกรีมวานิลลา", price: 69, category: "ไอศกรีม" },
+      { id: 4, name: "แพนเค้กกล้วยหอม", price: 79, category: "แพนเค้ก" },
+      { id: 5, name: "มัฟฟินวีแกน", price: 59, category: "วีแกน" },
+      { id: 6, name: "เค้กสตรอว์เบอร์รี", price: 95, category: "เค้ก" },
+      { id: 7, name: "เดนิช", price: 49, category: "เบเกอรี่" },
+      { id: 8, name: "ไอศกรีมช็อกโกแลต", price: 75, category: "ไอศกรีม" },
+      { id: 9, name: "แพนเค้กบลูเบอร์รี", price: 85, category: "แพนเค้ก" },
     ];
 
     setProducts(mock);
@@ -95,17 +99,10 @@ export default function POS({ cart, setCart }: Props) {
     setBarcode("");
   };
 
-  const categories = [
-    "All",
-    "Cakes",
-    "Pastry",
-    "Ice Cream",
-    "Pancakes",
-    "Vegan",
-  ];
+  const categories = ["ทั้งหมด", "เค้ก", "เบเกอรี่", "ไอศกรีม", "แพนเค้ก", "วีแกน"];
 
   const filteredProducts =
-    category === "All"
+    category === "ทั้งหมด"
       ? products
       : products.filter((product) => product.category === category);
 
@@ -116,66 +113,53 @@ export default function POS({ cart, setCart }: Props) {
   return (
     <Box
       sx={{
-        p: { xs: 2, md: 3 },
         minHeight: "100%",
-        background: "linear-gradient(180deg, #fafafa 0%, #f4f6f8 100%)",
       }}
     >
       <Box
         sx={{
           mb: 3,
-          p: { xs: 2, md: 3 },
-          borderRadius: 4,
+          p: { xs: 2.25, md: 3 },
+          borderRadius: 5,
           background:
-            "linear-gradient(135deg, #111827 0%, #1f2937 50%, #374151 100%)",
+            "linear-gradient(135deg, #111827 0%, #1f2937 55%, #374151 100%)",
           color: "#fff",
-          boxShadow: "0 14px 30px rgba(17, 24, 39, 0.18)",
+          boxShadow: "0 18px 34px rgba(15, 23, 42, 0.14)",
         }}
       >
-        <Stack
-          direction={isMobile ? "column" : "row"}
-          alignItems={isMobile ? "flex-start" : "center"}
-          justifyContent="space-between"
-          spacing={2}
-        >
-          <Box>
-            <Typography variant="h4" fontWeight={800} sx={{ mb: 0.5 }}>
-              ขายสินค้า
-            </Typography>
-            <Typography variant="body1" sx={{ opacity: 0.8 }}>
-              ระบบ POS สำหรับเพิ่มสินค้าเข้าตะกร้าแบบรวดเร็ว
-            </Typography>
-          </Box>
-
-          <Box
+        <Stack direction="row" spacing={1.5} alignItems="center">
+          <Avatar
             sx={{
-              px: 2,
-              py: 1.2,
+              width: 52,
+              height: 52,
               borderRadius: 3,
-              bgcolor: "rgba(255,255,255,0.08)",
-              backdropFilter: "blur(8px)",
-              border: "1px solid rgba(255,255,255,0.12)",
-              minWidth: 140,
+              bgcolor: "rgba(255,255,255,0.12)",
+              border: "1px solid rgba(255,255,255,0.15)",
             }}
           >
-            <Typography variant="body2" sx={{ opacity: 0.8 }}>
-              รายการในตะกร้า
-            </Typography>
+            <StorefrontRoundedIcon />
+          </Avatar>
+
+          <Box>
             <Typography variant="h5" fontWeight={800}>
-              {cart.reduce((sum, item) => sum + item.qty, 0)} ชิ้น
+              ขายสินค้า
+            </Typography>
+            <Typography variant="body2" sx={{ opacity: 0.82 }}>
+              ระบบขายหน้าร้านสำหรับเพิ่มสินค้าเข้าตะกร้าอย่างรวดเร็ว
             </Typography>
           </Box>
         </Stack>
       </Box>
 
-      <Box
+      <Paper
+        elevation={0}
         sx={{
           mb: 3,
           p: 2,
-          borderRadius: 4,
-          bgcolor: "#fff",
-          border: "1px solid #eceff3",
-          boxShadow: "0 8px 24px rgba(15, 23, 42, 0.06)",
+          borderRadius: 5,
+          border: "1px solid #e5e7eb",
+          background: "#fff",
+          boxShadow: "0 8px 24px rgba(15, 23, 42, 0.05)",
         }}
       >
         <Stack
@@ -192,7 +176,7 @@ export default function POS({ cart, setCart }: Props) {
             onKeyDown={(e) => e.key === "Enter" && scanProduct()}
             sx={{
               "& .MuiOutlinedInput-root": {
-                borderRadius: "16px",
+                borderRadius: 4,
                 backgroundColor: "#fafafa",
                 "& fieldset": {
                   borderColor: "#d0d7de",
@@ -226,32 +210,33 @@ export default function POS({ cart, setCart }: Props) {
               minWidth: isMobile ? "100%" : 170,
               borderRadius: 4,
               px: 3,
-              fontWeight: 700,
+              fontWeight: 800,
               textTransform: "none",
-              background: "linear-gradient(135deg, #111827 0%, #000 100%)",
+              background: "linear-gradient(135deg, #111827 0%, #000000 100%)",
               boxShadow: "0 10px 20px rgba(0,0,0,0.16)",
               "&:hover": {
-                background: "linear-gradient(135deg, #000 0%, #111827 100%)",
+                background: "linear-gradient(135deg, #000000 0%, #111827 100%)",
                 transform: "translateY(-1px)",
               },
             }}
           >
-            ยืนยัน
+            เพิ่มสินค้า
           </Button>
         </Stack>
-      </Box>
+      </Paper>
 
-      <Box
+      <Paper
+        elevation={0}
         sx={{
           mb: 3,
           p: 2,
-          borderRadius: 4,
-          bgcolor: "#fff",
-          border: "1px solid #eceff3",
+          borderRadius: 5,
+          border: "1px solid #e5e7eb",
+          background: "#fff",
           boxShadow: "0 8px 24px rgba(15, 23, 42, 0.05)",
         }}
       >
-        <Typography variant="subtitle1" fontWeight={700} mb={1.5}>
+        <Typography variant="subtitle1" fontWeight={800} mb={1.5}>
           หมวดหมู่สินค้า
         </Typography>
 
@@ -281,7 +266,7 @@ export default function POS({ cart, setCart }: Props) {
             );
           })}
         </Stack>
-      </Box>
+      </Paper>
 
       <Box
         display="grid"
@@ -341,7 +326,7 @@ export default function POS({ cart, setCart }: Props) {
                   border: "1px solid rgba(0,0,0,0.05)",
                 }}
               >
-                {product.category || "General"}
+                {product.category || "ทั่วไป"}
               </Box>
             </Box>
 
@@ -365,10 +350,7 @@ export default function POS({ cart, setCart }: Props) {
                 mt={1.5}
               >
                 <Box>
-                  <Typography
-                    variant="body2"
-                    sx={{ color: "#6b7280", mb: 0.2 }}
-                  >
+                  <Typography variant="body2" sx={{ color: "#6b7280", mb: 0.2 }}>
                     ราคา
                   </Typography>
                   <Typography
@@ -378,7 +360,7 @@ export default function POS({ cart, setCart }: Props) {
                       color: "#111827",
                     }}
                   >
-                    ฿{product.price}
+                    {formatCurrency(product.price)}
                   </Typography>
                 </Box>
 
@@ -401,7 +383,7 @@ export default function POS({ cart, setCart }: Props) {
                     addToCart(product);
                   }}
                 >
-                  <AddIcon fontSize="medium" />
+                  <AddRoundedIcon fontSize="medium" />
                 </IconButton>
               </Box>
             </CardContent>
