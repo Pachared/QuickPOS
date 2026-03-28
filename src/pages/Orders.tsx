@@ -31,6 +31,7 @@ import AccountBalanceRoundedIcon from "@mui/icons-material/AccountBalanceRounded
 import PrintRoundedIcon from "@mui/icons-material/PrintRounded";
 
 import type { Order } from "../types/pos";
+import { formatCurrency } from "../utils/format";
 
 interface OrdersProps {
   orders: Order[];
@@ -75,8 +76,8 @@ export default function Orders({ orders }: OrdersProps) {
           <tr>
             <td style="padding:4px 0;">${escapeHtml(item.name)}</td>
             <td style="padding:4px 0; text-align:right;">${item.qty}</td>
-            <td style="padding:4px 0; text-align:right;">${item.price.toLocaleString()}</td>
-            <td style="padding:4px 0; text-align:right;">${subtotal.toLocaleString()}</td>
+            <td style="padding:4px 0; text-align:right;">${formatCurrency(item.price)}</td>
+            <td style="padding:4px 0; text-align:right;">${formatCurrency(subtotal)}</td>
           </tr>
         `;
       })
@@ -129,9 +130,9 @@ export default function Orders({ orders }: OrdersProps) {
 
           <div class="row"><span>จำนวนสินค้า</span><span>${selectedOrder.items} ชิ้น</span></div>
           <div class="row"><span>วิธีชำระ</span><span>${selectedOrder.paymentMethod === "cash" ? "เงินสด" : "โอนเงิน"}</span></div>
-          <div class="row"><span>รับเงิน</span><span>฿${selectedOrder.receivedAmount.toLocaleString()}</span></div>
-          <div class="row"><span>เงินทอน</span><span>฿${selectedOrder.change.toLocaleString()}</span></div>
-          <div class="row total"><span>ยอดรวม</span><span>฿${selectedOrder.total.toLocaleString()}</span></div>
+          <div class="row"><span>รับเงิน</span><span>${formatCurrency(selectedOrder.receivedAmount)}</span></div>
+          <div class="row"><span>เงินทอน</span><span>${formatCurrency(selectedOrder.change)}</span></div>
+          <div class="row total"><span>ยอดรวม</span><span>${formatCurrency(selectedOrder.total)}</span></div>
 
           <div class="divider"></div>
           <div class="center muted">ขอบคุณที่ใช้บริการ</div>
@@ -153,9 +154,7 @@ export default function Orders({ orders }: OrdersProps) {
   return (
     <Box
       sx={{
-        p: { xs: 2, md: 3 },
         minHeight: "100%",
-        background: "linear-gradient(180deg, #fafafa 0%, #f4f6f8 100%)",
       }}
     >
       <Box
@@ -287,7 +286,7 @@ export default function Orders({ orders }: OrdersProps) {
                 ยอดขายรวม
               </Typography>
               <Typography variant="h6" fontWeight={800} color="#111827">
-                ฿{totalSales.toLocaleString()}
+                {formatCurrency(totalSales)}
               </Typography>
             </Box>
           </Stack>
@@ -388,7 +387,7 @@ export default function Orders({ orders }: OrdersProps) {
 
                     <TableCell>
                       <Typography fontWeight={800} color="#111827">
-                        ฿{order.total.toLocaleString()}
+                        {formatCurrency(order.total)}
                       </Typography>
                     </TableCell>
 
@@ -509,7 +508,8 @@ export default function Orders({ orders }: OrdersProps) {
                 sx={{
                   p: 2.2,
                   borderRadius: 4,
-                  background: "linear-gradient(135deg, #f9fafb 0%, #f3f4f6 100%)",
+                  background:
+                    "linear-gradient(135deg, #f9fafb 0%, #f3f4f6 100%)",
                   border: "1px solid #e5e7eb",
                 }}
               >
@@ -584,9 +584,9 @@ export default function Orders({ orders }: OrdersProps) {
                               </Typography>
                             </TableCell>
                             <TableCell>{item.qty}</TableCell>
-                            <TableCell>฿{item.price.toLocaleString()}</TableCell>
+                            <TableCell>{formatCurrency(item.price)}</TableCell>
                             <TableCell align="right" sx={{ fontWeight: 800 }}>
-                              ฿{subtotal.toLocaleString()}
+                              {formatCurrency(subtotal)}
                             </TableCell>
                           </TableRow>
                         );
@@ -627,14 +627,14 @@ export default function Orders({ orders }: OrdersProps) {
                     <Stack direction="row" justifyContent="space-between">
                       <Typography color="text.secondary">รับเงิน</Typography>
                       <Typography fontWeight={700}>
-                        ฿{selectedOrder.receivedAmount.toLocaleString()}
+                        {formatCurrency(selectedOrder.receivedAmount)}
                       </Typography>
                     </Stack>
 
                     <Stack direction="row" justifyContent="space-between">
                       <Typography color="text.secondary">เงินทอน</Typography>
                       <Typography fontWeight={700}>
-                        ฿{selectedOrder.change.toLocaleString()}
+                        {formatCurrency(selectedOrder.change)}
                       </Typography>
                     </Stack>
                   </Stack>
@@ -646,7 +646,8 @@ export default function Orders({ orders }: OrdersProps) {
                     p: 2,
                     borderRadius: 4,
                     border: "1px solid #e5e7eb",
-                    background: "linear-gradient(135deg, #f3f4f6 0%, #eef2f7 100%)",
+                    background:
+                      "linear-gradient(135deg, #f3f4f6 0%, #eef2f7 100%)",
                   }}
                 >
                   <Typography fontWeight={800} mb={1.2}>
@@ -666,11 +667,19 @@ export default function Orders({ orders }: OrdersProps) {
                       justifyContent="space-between"
                       alignItems="center"
                     >
-                      <Typography fontSize={18} fontWeight={900} color="#111827">
+                      <Typography
+                        fontSize={18}
+                        fontWeight={900}
+                        color="#111827"
+                      >
                         ยอดรวม
                       </Typography>
-                      <Typography fontSize={22} fontWeight={900} color="#111827">
-                        ฿{selectedOrder.total.toLocaleString()}
+                      <Typography
+                        fontSize={22}
+                        fontWeight={900}
+                        color="#111827"
+                      >
+                        {formatCurrency(selectedOrder.total)}
                       </Typography>
                     </Stack>
                   </Stack>
