@@ -19,7 +19,11 @@ import {
   ToggleButton,
   ToggleButtonGroup,
   Chip,
+  Snackbar,
+  Alert,
+  Slide,
 } from "@mui/material";
+import type { SlideProps, AlertColor } from "@mui/material";
 
 import DeleteOutlineRoundedIcon from "@mui/icons-material/DeleteOutlineRounded";
 import ShoppingBagRoundedIcon from "@mui/icons-material/ShoppingBagRounded";
@@ -48,6 +52,10 @@ interface CartProps {
 const PROMPTPAY_ID = "0812345678";
 const SHOP_NAME = "QuickPOS Store";
 
+function SlideDownTransition(props: SlideProps) {
+  return <Slide {...props} direction="down" />;
+}
+
 export default function Cart({
   cart,
   removeItem,
@@ -70,6 +78,16 @@ export default function Cart({
   const [receiptNo, setReceiptNo] = useState("");
   const audioCtxRef = useRef<AudioContext | null>(null);
 
+  const [snackbar, setSnackbar] = useState<{
+    open: boolean;
+    message: string;
+    severity: AlertColor;
+  }>({
+    open: false,
+    message: "",
+    severity: "success",
+  });
+
   const total = useMemo(
     () => cart.reduce((sum, item) => sum + Number(item.price) * item.qty, 0),
     [cart]
@@ -89,6 +107,25 @@ export default function Cart({
 
   const change = paymentMethod === "cash" ? received - total : 0;
   const isEnoughCash = paymentMethod === "cash" ? received >= total : true;
+
+  const showSnackbar = (message: string, severity: AlertColor = "success") => {
+    setSnackbar({
+      open: true,
+      message,
+      severity,
+    });
+  };
+
+  const handleCloseSnackbar = (
+    _: Event | React.SyntheticEvent<any, Event>,
+    reason?: string
+  ) => {
+    if (reason === "clickaway") return;
+    setSnackbar((prev) => ({
+      ...prev,
+      open: false,
+    }));
+  };
 
   useEffect(() => {
     if (!openCheckout) return;
@@ -124,6 +161,7 @@ export default function Cart({
       } catch (err) {
         console.error("Generate QR failed:", err);
         setQrDataUrl("");
+        showSnackbar("สร้าง QR ไม่สำเร็จ", "error");
       } finally {
         setIsGeneratingQr(false);
       }
@@ -174,6 +212,7 @@ export default function Cart({
     }
 
     setCashCounts(nextCounts);
+    showSnackbar("คำนวณเงินสดพอดีให้แล้ว", "info");
   };
 
   const resetCheckoutState = () => {
@@ -185,7 +224,7 @@ export default function Cart({
 
   const handleOpenCheckout = () => {
     if (cart.length === 0) {
-      alert("ไม่มีสินค้าในตะกร้า");
+      showSnackbar("ไม่มีสินค้าในตะกร้า", "warning");
       return;
     }
     resetCheckoutState();
@@ -372,7 +411,7 @@ export default function Cart({
   const handlePrintReceipt = () => {
     const receiptWindow = window.open("", "_blank", "width=420,height=800");
     if (!receiptWindow) {
-      alert("ไม่สามารถเปิดหน้าพิมพ์ได้");
+      showSnackbar("ไม่สามารถเปิดหน้าพิมพ์ได้", "error");
       return;
     }
 
@@ -384,11 +423,13 @@ export default function Cart({
       receiptWindow.focus();
       receiptWindow.print();
     };
+
+    showSnackbar("เปิดหน้าพิมพ์ใบเสร็จแล้ว", "success");
   };
 
   const handleConfirmPayment = async () => {
     if (paymentMethod === "cash" && !isEnoughCash) {
-      alert("จำนวนเงินสดไม่พอ");
+      showSnackbar("จำนวนเงินสดไม่พอ", "error");
       return;
     }
 
@@ -417,12 +458,13 @@ export default function Cart({
     setPaid(true);
     await playSuccessBeep();
 
-    alert(
+    showSnackbar(
       paymentMethod === "cash"
-        ? `ชำระเงินสำเร็จ\nรับเงิน ${formatCurrency(
-            received
-          )}\nเงินทอน ${formatCurrency(Math.max(change, 0))}`
-        : "ชำระเงินสำเร็จ (โอนเงิน)"
+        ? `ชำระเงินสำเร็จ รับเงิน ${formatCurrency(received)} เงินทอน ${formatCurrency(
+            Math.max(change, 0)
+          )}`
+        : "ชำระเงินสำเร็จ (โอนเงิน)",
+      "success"
     );
   };
 
@@ -430,6 +472,7 @@ export default function Cart({
     handlePrintReceipt();
     clearCart?.();
     handleCloseCheckout();
+    showSnackbar("จบการขายเรียบร้อย", "success");
   };
 
   return (
@@ -685,7 +728,7 @@ export default function Cart({
         <DialogTitle
           sx={{
             px: 3,
-            py: 2.5,
+            py: 2.2,
             fontWeight: 900,
             background:
               "linear-gradient(135deg, #111827 0%, #1f2937 55%, #374151 100%)",
@@ -699,14 +742,14 @@ export default function Cart({
           sx={{
             p: 3,
             pb: paymentMethod === "cash" ? 2 : 3,
-            maxHeight: "65vh",
+            maxHeight: "72vh",
             overflowY: "auto",
           }}
         >
           <Box
             sx={{
               mt: 1,
-              p: 2.2,
+              p: 1.8,
               borderRadius: 4,
               background: "linear-gradient(135deg, #f9fafb 0%, #f3f4f6 100%)",
               border: "1px solid #e5e7eb",
@@ -716,16 +759,20 @@ export default function Cart({
               direction="row"
               justifyContent="space-between"
               alignItems="center"
+              spacing={1.5}
             >
               <Box>
-                <Typography color="text.secondary">ยอดที่ต้องชำระ</Typography>
-                <Typography fontSize={28} fontWeight={900}>
+                <Typography fontSize={13} color="text.secondary" fontWeight={700}>
+                  ยอดที่ต้องชำระ
+                </Typography>
+                <Typography fontSize={22} fontWeight={900} lineHeight={1.2}>
                   {formatCurrency(total)}
                 </Typography>
               </Box>
 
               <Chip
                 label={receiptNo || "RECEIPT"}
+                size="small"
                 sx={{
                   borderRadius: 3,
                   fontWeight: 800,
@@ -736,7 +783,7 @@ export default function Cart({
             </Stack>
           </Box>
 
-          <Typography mt={3} mb={1} fontWeight={800}>
+          <Typography mt={2.2} mb={1.2} fontWeight={800}>
             วิธีชำระเงิน
           </Typography>
 
@@ -749,12 +796,21 @@ export default function Cart({
               setPaymentMethod(value);
             }}
             sx={{
-              mb: 2.5,
+              mb: 1.8,
+              display: "grid",
+              gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
+              gap: 1.2,
+              "& .MuiToggleButtonGroup-grouped": {
+                margin: "0 !important",
+                border: "1px solid #d1d5db !important",
+              },
               "& .MuiToggleButton-root": {
                 borderRadius: "18px !important",
                 textTransform: "none",
                 fontWeight: 800,
-                py: 1.3,
+                py: 1.25,
+                px: 1.5,
+                justifyContent: "center",
               },
             }}
           >
@@ -772,22 +828,22 @@ export default function Cart({
             <>
               <Box
                 sx={{
-                  mb: 1.5,
-                  p: 2,
+                  mb: 1.3,
+                  p: 1.6,
                   borderRadius: 4,
                   background:
-                    "linear-gradient(135deg, #f9fafb 0%, #f3f4f6 100%)",
-                  border: "1px solid #e5e7eb",
+                    "linear-gradient(135deg, #eef6ff 0%, #f8fbff 100%)",
+                  border: "1px solid #dbeafe",
                 }}
               >
-                <Stack direction="row" spacing={1.2} alignItems="center" mb={0.5}>
+                <Stack direction="row" spacing={1.2} alignItems="center">
                   <Avatar
                     sx={{
-                      width: 40,
-                      height: 40,
+                      width: 38,
+                      height: 38,
                       borderRadius: 3,
-                      bgcolor: "#eef2ff",
-                      color: "#4338ca",
+                      bgcolor: "#dbeafe",
+                      color: "#1d4ed8",
                     }}
                   >
                     <LocalAtmRoundedIcon />
@@ -795,10 +851,10 @@ export default function Cart({
 
                   <Box>
                     <Typography fontWeight={900} color="#111827">
-                      รับเงินสด
+                      เลือกแบงก์ที่ลูกค้าจ่าย
                     </Typography>
                     <Typography variant="body2" color="text.secondary">
-                      แตะเลือกแบงก์เพื่อเพิ่มยอดรับเงินได้ทันที
+                      แตะที่ปุ่มด้านล่างเพื่อเพิ่มยอดรับเงินทันที
                     </Typography>
                   </Box>
                 </Stack>
@@ -816,30 +872,32 @@ export default function Cart({
                     sx={{
                       position: "relative",
                       borderRadius: 4,
-                      p: 1.6,
-                      minHeight: 88,
+                      p: 1.4,
+                      minHeight: 84,
                       textTransform: "none",
                       color: "#111827",
                       background:
                         "linear-gradient(180deg, #ffffff 0%, #f9fafb 100%)",
-                      border: "1px solid #e5e7eb",
-                      boxShadow: "0 8px 18px rgba(15, 23, 42, 0.05)",
+                      border: "1px solid #dbe2ea",
+                      boxShadow: "0 10px 20px rgba(15, 23, 42, 0.06)",
                       display: "flex",
                       flexDirection: "column",
                       alignItems: "flex-start",
                       justifyContent: "space-between",
+                      transition: "all 0.18s ease",
                       "&:hover": {
                         background: "#ffffff",
                         transform: "translateY(-2px)",
                         boxShadow: "0 14px 24px rgba(15, 23, 42, 0.10)",
+                        borderColor: "#94a3b8",
                       },
                     }}
                   >
-                    <Typography fontSize={13} color="text.secondary" fontWeight={700}>
+                    <Typography fontSize={12} color="text.secondary" fontWeight={700}>
                       แบงก์
                     </Typography>
 
-                    <Typography fontSize={22} fontWeight={900}>
+                    <Typography fontSize={24} fontWeight={900} lineHeight={1}>
                       {value}
                     </Typography>
 
@@ -862,7 +920,7 @@ export default function Cart({
                 ))}
               </Box>
 
-              <Stack direction={{ xs: "column", sm: "row" }} spacing={1.2} mt={2}>
+              <Stack direction={{ xs: "column", sm: "row" }} spacing={1.2} mt={1.6}>
                 <Button
                   fullWidth
                   variant="contained"
@@ -870,7 +928,7 @@ export default function Cart({
                   onClick={setExactCash}
                   sx={{
                     borderRadius: 3,
-                    py: 1.2,
+                    py: 1.15,
                     fontWeight: 800,
                     textTransform: "none",
                     background: "linear-gradient(135deg, #111827 0%, #000 100%)",
@@ -890,7 +948,7 @@ export default function Cart({
                   onClick={resetCash}
                   sx={{
                     borderRadius: 3,
-                    py: 1.2,
+                    py: 1.15,
                     fontWeight: 800,
                     textTransform: "none",
                     borderColor: "#d1d5db",
@@ -907,14 +965,14 @@ export default function Cart({
 
               <Box
                 sx={{
-                  mt: 2,
-                  p: 2,
+                  mt: 1.8,
+                  p: 1.8,
                   borderRadius: 4,
                   border: "1px solid #e5e7eb",
                   background: "#fff",
                 }}
               >
-                <Typography fontWeight={800} mb={1.2}>
+                <Typography fontWeight={800} mb={1.1}>
                   สรุปแบงก์ที่รับ
                 </Typography>
 
@@ -1143,6 +1201,31 @@ export default function Cart({
           </Stack>
         </DialogActions>
       </Dialog>
+
+      <Snackbar
+        open={snackbar.open}
+        autoHideDuration={2600}
+        onClose={handleCloseSnackbar}
+        anchorOrigin={{ vertical: "top", horizontal: "center" }}
+        TransitionComponent={SlideDownTransition}
+      >
+        <Alert
+          onClose={handleCloseSnackbar}
+          severity={snackbar.severity}
+          variant="filled"
+          elevation={6}
+          sx={{
+            width: "100%",
+            minWidth: { xs: "calc(100vw - 24px)", sm: 420 },
+            borderRadius: 3,
+            fontWeight: 700,
+            boxShadow: "0 16px 36px rgba(15, 23, 42, 0.18)",
+            alignItems: "center",
+          }}
+        >
+          {snackbar.message}
+        </Alert>
+      </Snackbar>
     </>
   );
 }
