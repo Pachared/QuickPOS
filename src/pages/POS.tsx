@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   Box,
   Typography,
@@ -13,10 +13,13 @@ import {
   InputAdornment,
   Paper,
   Avatar,
+  Snackbar,
+  Alert,
+  Slide,
 } from "@mui/material";
+import type { AlertColor, SlideProps } from "@mui/material";
 import AddRoundedIcon from "@mui/icons-material/AddRounded";
 import QrCodeScannerRoundedIcon from "@mui/icons-material/QrCodeScannerRounded";
-import SearchRoundedIcon from "@mui/icons-material/SearchRounded";
 import LocalMallRoundedIcon from "@mui/icons-material/LocalMallRounded";
 import StorefrontRoundedIcon from "@mui/icons-material/StorefrontRounded";
 
@@ -29,6 +32,7 @@ interface Product {
   price: number;
   image?: string;
   category?: string;
+  barcode?: string;
 }
 
 interface Props {
@@ -36,29 +40,146 @@ interface Props {
   setCart: React.Dispatch<React.SetStateAction<CartItem[]>>;
 }
 
+function SlideDownTransition(props: SlideProps) {
+  return <Slide {...props} direction="down" />;
+}
+
 export default function POS({ cart, setCart }: Props) {
   const [barcode, setBarcode] = useState("");
   const [products, setProducts] = useState<Product[]>([]);
   const [category, setCategory] = useState("ทั้งหมด");
+  const barcodeRef = useRef<HTMLInputElement | null>(null);
+  const scanTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const [snackbar, setSnackbar] = useState<{
+    open: boolean;
+    message: string;
+    severity: AlertColor;
+  }>({
+    open: false,
+    message: "",
+    severity: "success",
+  });
 
   const isTablet = useMediaQuery("(max-width:1366px)");
   const isMobile = useMediaQuery("(max-width:768px)");
 
+  const showSnackbar = (message: string, severity: AlertColor = "success") => {
+    setSnackbar({
+      open: true,
+      message,
+      severity,
+    });
+  };
+
+  const handleCloseSnackbar = (
+    _: Event | React.SyntheticEvent<any, Event>,
+    reason?: string
+  ) => {
+    if (reason === "clickaway") return;
+    setSnackbar((prev) => ({ ...prev, open: false }));
+  };
+
+  const focusBarcodeInput = () => {
+    requestAnimationFrame(() => {
+      barcodeRef.current?.focus();
+      barcodeRef.current?.select?.();
+    });
+  };
+
   useEffect(() => {
     loadProducts();
+
+    setTimeout(() => {
+      barcodeRef.current?.focus();
+    }, 120);
   }, []);
+
+  useEffect(() => {
+    const trimmed = barcode.trim();
+
+    if (!trimmed) return;
+
+    if (scanTimeoutRef.current) {
+      clearTimeout(scanTimeoutRef.current);
+    }
+
+    scanTimeoutRef.current = setTimeout(() => {
+      scanProduct(trimmed);
+    }, 150);
+
+    return () => {
+      if (scanTimeoutRef.current) {
+        clearTimeout(scanTimeoutRef.current);
+      }
+    };
+  }, [barcode, products]);
 
   const loadProducts = async () => {
     const mock: Product[] = [
-      { id: 1, name: "เค้กช็อกโกแลต", price: 89, category: "เค้ก" },
-      { id: 2, name: "ครัวซองต์", price: 45, category: "เบเกอรี่" },
-      { id: 3, name: "ไอศกรีมวานิลลา", price: 69, category: "ไอศกรีม" },
-      { id: 4, name: "แพนเค้กกล้วยหอม", price: 79, category: "แพนเค้ก" },
-      { id: 5, name: "มัฟฟินวีแกน", price: 59, category: "วีแกน" },
-      { id: 6, name: "เค้กสตรอว์เบอร์รี", price: 95, category: "เค้ก" },
-      { id: 7, name: "เดนิช", price: 49, category: "เบเกอรี่" },
-      { id: 8, name: "ไอศกรีมช็อกโกแลต", price: 75, category: "ไอศกรีม" },
-      { id: 9, name: "แพนเค้กบลูเบอร์รี", price: 85, category: "แพนเค้ก" },
+      {
+        id: 1,
+        name: "เค้กช็อกโกแลต",
+        price: 89,
+        category: "เค้ก",
+        barcode: "1001",
+      },
+      {
+        id: 2,
+        name: "ครัวซองต์",
+        price: 45,
+        category: "เบเกอรี่",
+        barcode: "1002",
+      },
+      {
+        id: 3,
+        name: "ไอศกรีมวานิลลา",
+        price: 69,
+        category: "ไอศกรีม",
+        barcode: "1003",
+      },
+      {
+        id: 4,
+        name: "แพนเค้กกล้วยหอม",
+        price: 79,
+        category: "แพนเค้ก",
+        barcode: "1004",
+      },
+      {
+        id: 5,
+        name: "มัฟฟินวีแกน",
+        price: 59,
+        category: "วีแกน",
+        barcode: "1005",
+      },
+      {
+        id: 6,
+        name: "เค้กสตรอว์เบอร์รี",
+        price: 95,
+        category: "เค้ก",
+        barcode: "1006",
+      },
+      {
+        id: 7,
+        name: "เดนิช",
+        price: 49,
+        category: "เบเกอรี่",
+        barcode: "1007",
+      },
+      {
+        id: 8,
+        name: "ไอศกรีมช็อกโกแลต",
+        price: 75,
+        category: "ไอศกรีม",
+        barcode: "1008",
+      },
+      {
+        id: 9,
+        name: "แพนเค้กบลูเบอร์รี",
+        price: 85,
+        category: "แพนเค้ก",
+        barcode: "1009",
+      },
     ];
 
     setProducts(mock);
@@ -85,21 +206,40 @@ export default function POS({ cart, setCart }: Props) {
     }
   };
 
-  const scanProduct = async () => {
-    if (!barcode.trim()) return;
+  const scanProduct = (rawValue?: string) => {
+    const code = (rawValue ?? barcode).trim();
 
-    const found = products.find((p) => p.id.toString() === barcode.trim());
+    if (!code) return;
+
+    const found = products.find(
+      (p) => p.barcode?.trim() === code || p.id.toString() === code
+    );
 
     if (!found) {
-      alert("ไม่พบสินค้า");
+      setBarcode("");
+      showSnackbar("ไม่พบสินค้า", "warning");
+      focusBarcodeInput();
       return;
     }
 
     addToCart(found);
     setBarcode("");
+    showSnackbar(`เพิ่ม ${found.name} ลงตะกร้าแล้ว`, "success");
+
+    setTimeout(() => {
+      barcodeRef.current?.focus();
+      barcodeRef.current?.select?.();
+    }, 50);
   };
 
-  const categories = ["ทั้งหมด", "เค้ก", "เบเกอรี่", "ไอศกรีม", "แพนเค้ก", "วีแกน"];
+  const categories = [
+    "ทั้งหมด",
+    "เค้ก",
+    "เบเกอรี่",
+    "ไอศกรีม",
+    "แพนเค้ก",
+    "วีแกน",
+  ];
 
   const filteredProducts =
     category === "ทั้งหมด"
@@ -165,15 +305,17 @@ export default function POS({ cart, setCart }: Props) {
         <Stack
           direction={isMobile ? "column" : "row"}
           spacing={2}
-          alignItems="stretch"
+          alignItems={{ xs: "stretch", md: "flex-start" }}
         >
           <TextField
+            inputRef={barcodeRef}
             fullWidth
             size="medium"
             label="สแกนบาร์โค้ด / รหัสสินค้า"
+            placeholder="ยิงบาร์โค้ดได้ทันที"
             value={barcode}
             onChange={(e) => setBarcode(e.target.value)}
-            onKeyDown={(e) => e.key === "Enter" && scanProduct()}
+            autoFocus
             sx={{
               "& .MuiOutlinedInput-root": {
                 borderRadius: 4,
@@ -196,22 +338,26 @@ export default function POS({ cart, setCart }: Props) {
             InputProps={{
               startAdornment: (
                 <InputAdornment position="start">
-                  <SearchRoundedIcon sx={{ color: "#6b7280" }} />
+                  <QrCodeScannerRoundedIcon sx={{ color: "#2563eb" }} />
                 </InputAdornment>
               ),
             }}
+            helperText="ยิงเสร็จแล้วระบบจะเพิ่มสินค้าเข้าตะกร้าให้อัตโนมัติ"
           />
 
           <Button
             variant="contained"
-            onClick={scanProduct}
+            onClick={() => scanProduct()}
             startIcon={<QrCodeScannerRoundedIcon />}
             sx={{
-              minWidth: isMobile ? "100%" : 170,
+              minWidth: isMobile ? "100%" : 190,
+              height: 56,
               borderRadius: 4,
               px: 3,
+              alignSelf: "stretch",
               fontWeight: 800,
               textTransform: "none",
+              whiteSpace: "nowrap",
               background: "linear-gradient(135deg, #111827 0%, #000000 100%)",
               boxShadow: "0 10px 20px rgba(0,0,0,0.16)",
               "&:hover": {
@@ -220,7 +366,7 @@ export default function POS({ cart, setCart }: Props) {
               },
             }}
           >
-            เพิ่มสินค้า
+            สแกนเข้าตะกร้า
           </Button>
         </Stack>
       </Paper>
@@ -350,7 +496,10 @@ export default function POS({ cart, setCart }: Props) {
                 mt={1.5}
               >
                 <Box>
-                  <Typography variant="body2" sx={{ color: "#6b7280", mb: 0.2 }}>
+                  <Typography
+                    variant="body2"
+                    sx={{ color: "#6b7280", mb: 0.2 }}
+                  >
                     ราคา
                   </Typography>
                   <Typography
@@ -369,7 +518,8 @@ export default function POS({ cart, setCart }: Props) {
                   sx={{
                     width: 46,
                     height: 46,
-                    background: "linear-gradient(135deg, #111827 0%, #000 100%)",
+                    background:
+                      "linear-gradient(135deg, #111827 0%, #000 100%)",
                     color: "white",
                     boxShadow: "0 8px 18px rgba(0,0,0,0.18)",
                     "&:hover": {
@@ -381,6 +531,7 @@ export default function POS({ cart, setCart }: Props) {
                   onClick={(e) => {
                     e.stopPropagation();
                     addToCart(product);
+                    focusBarcodeInput();
                   }}
                 >
                   <AddRoundedIcon fontSize="medium" />
@@ -390,6 +541,31 @@ export default function POS({ cart, setCart }: Props) {
           </Card>
         ))}
       </Box>
+
+      <Snackbar
+        open={snackbar.open}
+        autoHideDuration={1800}
+        onClose={handleCloseSnackbar}
+        anchorOrigin={{ vertical: "top", horizontal: "center" }}
+        TransitionComponent={SlideDownTransition}
+      >
+        <Alert
+          onClose={handleCloseSnackbar}
+          severity={snackbar.severity}
+          variant="filled"
+          elevation={6}
+          sx={{
+            width: "100%",
+            minWidth: { xs: "calc(100vw - 24px)", sm: 360 },
+            borderRadius: 3,
+            fontWeight: 700,
+            boxShadow: "0 16px 36px rgba(15, 23, 42, 0.18)",
+            alignItems: "center",
+          }}
+        >
+          {snackbar.message}
+        </Alert>
+      </Snackbar>
     </Box>
   );
 }
