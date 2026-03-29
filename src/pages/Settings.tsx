@@ -17,7 +17,10 @@ import {
   Paper,
   Snackbar,
   Alert,
+  Slide,
 } from "@mui/material";
+import { styled } from "@mui/material/styles";
+import type { AlertColor, SlideProps, SwitchProps } from "@mui/material";
 
 import SettingsRoundedIcon from "@mui/icons-material/SettingsRounded";
 import ReceiptLongRoundedIcon from "@mui/icons-material/ReceiptLongRounded";
@@ -56,9 +59,86 @@ const defaultSettings: PosSettings = {
   soundOnCheckout: true,
 };
 
+const IOSSwitch = styled((props: SwitchProps) => (
+  <Switch focusVisibleClassName=".Mui-focusVisible" disableRipple {...props} />
+))(({ theme }) => ({
+  width: 42,
+  height: 26,
+  padding: 0,
+  "& .MuiSwitch-switchBase": {
+    padding: 0,
+    margin: 2,
+    transitionDuration: "300ms",
+    "&.Mui-checked": {
+      transform: "translateX(16px)",
+      color: "#fff",
+      "& + .MuiSwitch-track": {
+        backgroundColor: "#65C466",
+        opacity: 1,
+        border: 0,
+      },
+      "&.Mui-disabled + .MuiSwitch-track": {
+        opacity: 0.5,
+      },
+    },
+    "&.Mui-focusVisible .MuiSwitch-thumb": {
+      color: "#33cf4d",
+      border: "6px solid #fff",
+    },
+    "&.Mui-disabled .MuiSwitch-thumb": {
+      color: theme.palette.grey[100],
+    },
+    "&.Mui-disabled + .MuiSwitch-track": {
+      opacity: 0.7,
+    },
+  },
+  "& .MuiSwitch-thumb": {
+    boxSizing: "border-box",
+    width: 22,
+    height: 22,
+  },
+  "& .MuiSwitch-track": {
+    borderRadius: 26 / 2,
+    backgroundColor: "#E9E9EA",
+    opacity: 1,
+    transition: theme.transitions.create(["background-color"], {
+      duration: 500,
+    }),
+  },
+}));
+
+function SlideDownTransition(props: SlideProps) {
+  return <Slide {...props} direction="down" />;
+}
+
 export default function Settings() {
   const [settings, setSettings] = useState<PosSettings>(defaultSettings);
-  const [openSaved, setOpenSaved] = useState(false);
+
+  const [snackbar, setSnackbar] = useState<{
+    open: boolean;
+    message: string;
+    severity: AlertColor;
+  }>({
+    open: false,
+    message: "",
+    severity: "success",
+  });
+
+  const showSnackbar = (message: string, severity: AlertColor = "success") => {
+    setSnackbar({
+      open: true,
+      message,
+      severity,
+    });
+  };
+
+  const handleCloseSnackbar = (
+    _: Event | React.SyntheticEvent<any, Event>,
+    reason?: string
+  ) => {
+    if (reason === "clickaway") return;
+    setSnackbar((prev) => ({ ...prev, open: false }));
+  };
 
   useEffect(() => {
     try {
@@ -68,16 +148,17 @@ export default function Settings() {
       }
     } catch (error) {
       console.error("โหลด settings ไม่สำเร็จ:", error);
+      showSnackbar("โหลดการตั้งค่าไม่สำเร็จ", "error");
     }
   }, []);
 
   const saveSettings = () => {
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(settings));
-      setOpenSaved(true);
+      showSnackbar("บันทึกการตั้งค่าเรียบร้อยแล้ว", "success");
     } catch (error) {
       console.error("บันทึก settings ไม่สำเร็จ:", error);
-      alert("ไม่สามารถบันทึกการตั้งค่าได้");
+      showSnackbar("ไม่สามารถบันทึกการตั้งค่าได้", "error");
     }
   };
 
@@ -85,9 +166,14 @@ export default function Settings() {
     const confirmed = window.confirm("ต้องการรีเซ็ตการตั้งค่ากลับค่าเริ่มต้นหรือไม่?");
     if (!confirmed) return;
 
-    setSettings(defaultSettings);
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(defaultSettings));
-    setOpenSaved(true);
+    try {
+      setSettings(defaultSettings);
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(defaultSettings));
+      showSnackbar("รีเซ็ตการตั้งค่าเรียบร้อยแล้ว", "info");
+    } catch (error) {
+      console.error("รีเซ็ต settings ไม่สำเร็จ:", error);
+      showSnackbar("ไม่สามารถรีเซ็ตการตั้งค่าได้", "error");
+    }
   };
 
   return (
@@ -96,7 +182,6 @@ export default function Settings() {
         minHeight: "100%",
       }}
     >
-      {/* Header */}
       <Box
         sx={{
           mb: 3,
@@ -137,9 +222,7 @@ export default function Settings() {
         gridTemplateColumns={{ xs: "1fr", xl: "1.2fr 0.8fr" }}
         gap={2}
       >
-        {/* Left */}
         <Stack spacing={2}>
-          {/* Receipt settings */}
           <Card
             elevation={0}
             sx={{
@@ -230,7 +313,6 @@ export default function Settings() {
             </CardContent>
           </Card>
 
-          {/* Payment */}
           <Card
             elevation={0}
             sx={{
@@ -285,10 +367,11 @@ export default function Settings() {
                       background: "#fafafa",
                     }}
                   >
-                    <Stack spacing={1}>
+                    <Stack spacing={1.2}>
                       <FormControlLabel
                         control={
-                          <Switch
+                          <IOSSwitch
+                            sx={{ m: 1 }}
                             checked={settings.enableCash}
                             onChange={(e) =>
                               setSettings({
@@ -303,7 +386,8 @@ export default function Settings() {
 
                       <FormControlLabel
                         control={
-                          <Switch
+                          <IOSSwitch
+                            sx={{ m: 1 }}
                             checked={settings.enableTransfer}
                             onChange={(e) =>
                               setSettings({
@@ -322,7 +406,6 @@ export default function Settings() {
             </CardContent>
           </Card>
 
-          {/* Desktop options */}
           <Card
             elevation={0}
             sx={{
@@ -349,10 +432,11 @@ export default function Settings() {
                       background: "#fff",
                     }}
                   >
-                    <Stack spacing={0.5}>
+                    <Stack spacing={0.8}>
                       <FormControlLabel
                         control={
-                          <Switch
+                          <IOSSwitch
+                            sx={{ m: 1 }}
                             checked={settings.autoPrintReceipt}
                             onChange={(e) =>
                               setSettings({
@@ -367,7 +451,8 @@ export default function Settings() {
 
                       <FormControlLabel
                         control={
-                          <Switch
+                          <IOSSwitch
+                            sx={{ m: 1 }}
                             checked={settings.showPrintPreview}
                             onChange={(e) =>
                               setSettings({
@@ -382,7 +467,8 @@ export default function Settings() {
 
                       <FormControlLabel
                         control={
-                          <Switch
+                          <IOSSwitch
+                            sx={{ m: 1 }}
                             checked={settings.soundOnCheckout}
                             onChange={(e) =>
                               setSettings({
@@ -402,7 +488,6 @@ export default function Settings() {
           </Card>
         </Stack>
 
-        {/* Right */}
         <Stack spacing={2}>
           <Card
             elevation={0}
@@ -542,18 +627,27 @@ export default function Settings() {
       </Box>
 
       <Snackbar
-        open={openSaved}
-        autoHideDuration={2500}
-        onClose={() => setOpenSaved(false)}
-        anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
+        open={snackbar.open}
+        autoHideDuration={2600}
+        onClose={handleCloseSnackbar}
+        anchorOrigin={{ vertical: "top", horizontal: "center" }}
+        TransitionComponent={SlideDownTransition}
       >
         <Alert
-          onClose={() => setOpenSaved(false)}
-          severity="success"
+          onClose={handleCloseSnackbar}
+          severity={snackbar.severity}
           variant="filled"
-          sx={{ borderRadius: 3 }}
+          elevation={6}
+          sx={{
+            width: "100%",
+            minWidth: { xs: "calc(100vw - 24px)", sm: 420 },
+            borderRadius: 3,
+            fontWeight: 700,
+            boxShadow: "0 16px 36px rgba(15, 23, 42, 0.18)",
+            alignItems: "center",
+          }}
         >
-          บันทึกการตั้งค่าเรียบร้อยแล้ว
+          {snackbar.message}
         </Alert>
       </Snackbar>
     </Box>
