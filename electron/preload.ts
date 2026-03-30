@@ -1,11 +1,11 @@
 import { contextBridge, ipcRenderer } from "electron";
 
-contextBridge.exposeInMainWorld("api", {
-  getProducts: () => ipcRenderer.invoke("products:getAll"),
-
-  getProduct: (barcode: string) =>
-    ipcRenderer.invoke("product:getByBarcode", barcode),
-
-  createOrder: (cart: any[]) =>
-    ipcRenderer.invoke("order:create", cart),
+contextBridge.exposeInMainWorld("pos", {
+  listProducts: () => ipcRenderer.invoke("products:list"),
+  createProduct: (payload: any) => ipcRenderer.invoke("products:create", payload),
+  updateProduct: (id: number, payload: any) =>
+    ipcRenderer.invoke("products:update", id, payload),
+  deleteProduct: (id: number) => ipcRenderer.invoke("products:delete", id),
+  increaseStockByBarcode: (barcode: string, amount = 1) =>
+    ipcRenderer.invoke("products:increase-stock-by-barcode", barcode, amount),
 });

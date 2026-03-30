@@ -5,53 +5,38 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 const electron_1 = require("electron");
 const path_1 = __importDefault(require("path"));
-const sqlite_1 = __importDefault(require("./database/sqlite"));
+const products_1 = require("./ipc/products");
+require("./database/sqlite");
+let mainWindow = null;
 const isDev = !electron_1.app.isPackaged;
+const DEV_SERVER_URL = "http://localhost:5173";
 function createWindow() {
-    const win = new electron_1.BrowserWindow({
-        width: 1920,
-        height: 1080,
-        backgroundColor: "#EEEEEE",
+    mainWindow = new electron_1.BrowserWindow({
+        width: 1400,
+        height: 900,
         webPreferences: {
             preload: path_1.default.join(__dirname, "preload.js"),
+            contextIsolation: true,
+            nodeIntegration: false,
         },
     });
     if (isDev) {
-        win.loadURL("http://localhost:5173");
-        win.webContents.openDevTools();
+        mainWindow.loadURL(DEV_SERVER_URL);
+        mainWindow.webContents.openDevTools();
     }
     else {
-        win.loadFile(path_1.default.join(__dirname, "../dist/index.html"));
+        mainWindow.loadFile(path_1.default.join(__dirname, "../dist/index.html"));
     }
-    win.webContents.openDevTools();
 }
-electron_1.app.whenReady().then(createWindow);
-electron_1.ipcMain.handle("product:getByBarcode", (event, barcode) => {
-    const product = sqlite_1.default
-        .prepare("SELECT * FROM products WHERE barcode=?")
-        .get(barcode);
-    return product;
-});
-electron_1.ipcMain.handle("order:create", (event, cart) => {
-    const total = cart.reduce((sum, item) => sum + item.price * item.qty, 0);
-    const order = sqlite_1.default
-        .prepare("INSERT INTO orders (total, created_at) VALUES (?, datetime('now'))")
-        .run(total);
-    const orderId = order.lastInsertRowid;
-    const insertItem = sqlite_1.default.prepare(`
-    INSERT INTO order_items
-    (order_id, product_id, quantity, price)
-    VALUES (?, ?, ?, ?)
-  `);
-    const transaction = sqlite_1.default.transaction((items) => {
-        for (const item of items) {
-            insertItem.run(orderId, item.id, item.qty, item.price);
-        }
+electron_1.app.whenReady().then(() => {
+    (0, products_1.registerProductIpc)();
+    createWindow();
+    electron_1.app.on("activate", () => {
+        if (electron_1.BrowserWindow.getAllWindows().length === 0)
+            createWindow();
     });
-    transaction(cart);
-    return { success: true };
 });
-electron_1.ipcMain.handle("products:getAll", () => {
-    const products = sqlite_1.default.prepare("SELECT * FROM products").all();
-    return products;
+electron_1.app.on("window-all-closed", () => {
+    if (process.platform !== "darwin")
+        electron_1.app.quit();
 });

@@ -21,11 +21,11 @@ import {
   Avatar,
   InputAdornment,
   Chip,
-  Divider,
   Snackbar,
   Alert,
   Slide,
   MenuItem,
+  CircularProgress,
 } from "@mui/material";
 import Grid from "@mui/material/Grid";
 import type { AlertColor, SlideProps } from "@mui/material";
@@ -34,38 +34,24 @@ import EditRoundedIcon from "@mui/icons-material/EditRounded";
 import DeleteOutlineRoundedIcon from "@mui/icons-material/DeleteOutlineRounded";
 import AddRoundedIcon from "@mui/icons-material/AddRounded";
 import Inventory2RoundedIcon from "@mui/icons-material/Inventory2Rounded";
-import QrCode2RoundedIcon from "@mui/icons-material/QrCode2Rounded";
-import SellRoundedIcon from "@mui/icons-material/SellRounded";
 import SearchRoundedIcon from "@mui/icons-material/SearchRounded";
-import WarningAmberRoundedIcon from "@mui/icons-material/WarningAmberRounded";
 import ChecklistRoundedIcon from "@mui/icons-material/ChecklistRounded";
-import CategoryRoundedIcon from "@mui/icons-material/CategoryRounded";
 import LocalShippingRoundedIcon from "@mui/icons-material/LocalShippingRounded";
 import WarehouseRoundedIcon from "@mui/icons-material/WarehouseRounded";
 import InventoryRoundedIcon from "@mui/icons-material/InventoryRounded";
 import PaymentsRoundedIcon from "@mui/icons-material/PaymentsRounded";
 import InfoRoundedIcon from "@mui/icons-material/InfoRounded";
-import AddCircleOutlineRoundedIcon from "@mui/icons-material/AddCircleOutlineRounded";
 import QrCodeScannerRoundedIcon from "@mui/icons-material/QrCodeScannerRounded";
 
 import { formatCurrency } from "../utils/format";
+import {
+  posApi,
+  type Product as ApiProduct,
+  type ProductPayload,
+} from "../lib/posApi";
 
-interface Product {
-  id: number;
-  barcode: string;
-  sku: string;
-  name: string;
-  category: string;
-  unit: string;
-  price: number;
-  cost: number;
-  stockQty: number;
-  minStock: number;
-  supplier: string;
-  location: string;
-  description: string;
-  status: "active" | "inactive";
-}
+type Product = ApiProduct;
+type StockFilter = "all" | "low" | "out";
 
 const emptyForm: Product = {
   id: 0,
@@ -82,6 +68,8 @@ const emptyForm: Product = {
   location: "",
   description: "",
   status: "active",
+  createdAt: "",
+  updatedAt: "",
 };
 
 const unitOptions = ["ชิ้น", "ขวด", "กล่อง", "แพ็ก", "ถุง", "ชิ้น/ชุด"];
@@ -106,8 +94,11 @@ export default function Products() {
   const [openForm, setOpenForm] = useState(false);
   const [openDelete, setOpenDelete] = useState(false);
   const [keyword, setKeyword] = useState("");
+  const [stockFilter, setStockFilter] = useState<StockFilter>("all");
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [form, setForm] = useState<Product>(emptyForm);
+  const [loading, setLoading] = useState(false);
+  const [saving, setSaving] = useState(false);
 
   const [scanBarcode, setScanBarcode] = useState("");
   const scanInputRef = useRef<HTMLInputElement | null>(null);
@@ -146,13 +137,35 @@ export default function Products() {
     });
   };
 
+  const loadProducts = async () => {
+    try {
+      setLoading(true);
+      const rows = await posApi.listProducts();
+      setProducts(rows);
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : "โหลดข้อมูลสินค้าไม่สำเร็จ";
+      showSnackbar(message, "error");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadProducts();
+    focusScanInput();
+  }, []);
+
   const openAdd = () => {
     setForm(emptyForm);
     setOpenForm(true);
   };
 
   const openEdit = (product: Product) => {
-    setForm(product);
+    setForm({
+      ...emptyForm,
+      ...product,
+    });
     setOpenForm(true);
   };
 
@@ -178,42 +191,37 @@ export default function Products() {
     }));
   };
 
-  const increaseStockByBarcode = (barcodeValue: string, amount = 1) => {
+  const increaseStockByBarcode = async (barcodeValue: string, amount = 1) => {
     const trimmed = barcodeValue.trim();
-
     if (!trimmed) return;
 
-    const found = products.find((item) => item.barcode.trim() === trimmed);
+    try {
+      const updated = await posApi.increaseStockByBarcode(trimmed, amount);
 
-    if (!found) {
+      setProducts((prev) =>
+        prev.map((item) => (item.id === updated.id ? updated : item))
+      );
+
       setScanBarcode("");
-      showSnackbar("ไม่พบบาร์โค้ดนี้ในระบบ กรุณาเพิ่มสินค้าใหม่ก่อน", "warning");
+      showSnackbar(
+        `เพิ่มจำนวนสินค้า ${updated.name} +${amount} ${updated.unit}`,
+        "success"
+      );
+    } catch (error) {
+      const message =
+        error instanceof Error
+          ? error.message
+          : "ไม่พบบาร์โค้ดนี้ในระบบ กรุณาเพิ่มสินค้าใหม่ก่อน";
+
+      setScanBarcode("");
+      showSnackbar(message, "warning");
+    } finally {
       focusScanInput();
-      return;
     }
-
-    setProducts((prev) =>
-      prev.map((item) =>
-        item.id === found.id
-          ? {
-              ...item,
-              stockQty: item.stockQty + amount,
-            }
-          : item
-      )
-    );
-
-    setScanBarcode("");
-    showSnackbar(
-      `เพิ่มจำนวนสินค้า ${found.name} +${amount} ${found.unit}`,
-      "success"
-    );
-    focusScanInput();
   };
 
   useEffect(() => {
     const trimmed = scanBarcode.trim();
-
     if (!trimmed) return;
 
     if (scanTimeoutRef.current) {
@@ -229,144 +237,168 @@ export default function Products() {
         clearTimeout(scanTimeoutRef.current);
       }
     };
-  }, [scanBarcode, products]);
+  }, [scanBarcode]);
 
-  const saveProduct = () => {
+  const saveProduct = async () => {
     if (!form.barcode.trim()) {
       showSnackbar("กรุณากรอกบาร์โค้ดสินค้า", "warning");
       return;
     }
-
     if (!form.sku.trim()) {
       showSnackbar("กรุณากรอกรหัสสินค้า", "warning");
       return;
     }
-
     if (!form.name.trim()) {
       showSnackbar("กรุณากรอกชื่อสินค้า", "warning");
       return;
     }
-
     if (!form.category.trim()) {
       showSnackbar("กรุณาเลือกหมวดหมู่สินค้า", "warning");
       return;
     }
-
     if (!form.unit.trim()) {
       showSnackbar("กรุณาเลือกหน่วยสินค้า", "warning");
       return;
     }
-
     if (form.price <= 0) {
       showSnackbar("ราคาขายต้องมากกว่า 0", "warning");
       return;
     }
-
     if (form.cost < 0) {
       showSnackbar("ต้นทุนต้องไม่ติดลบ", "warning");
       return;
     }
-
     if (form.stockQty < 0) {
       showSnackbar("จำนวนสินค้าในสต๊อกต้องไม่ติดลบ", "warning");
       return;
     }
-
     if (form.minStock < 0) {
       showSnackbar("สต๊อกขั้นต่ำต้องไม่ติดลบ", "warning");
       return;
     }
 
-    if (
-      products.some(
-        (p) => p.barcode.trim() === form.barcode.trim() && p.id !== form.id
-      )
-    ) {
-      showSnackbar("บาร์โค้ดนี้มีอยู่ในระบบแล้ว", "error");
-      return;
-    }
-
-    if (
-      products.some((p) => p.sku.trim() === form.sku.trim() && p.id !== form.id)
-    ) {
-      showSnackbar("รหัสสินค้านี้มีอยู่ในระบบแล้ว", "error");
-      return;
-    }
-
-    const normalized: Product = {
-      ...form,
+    const normalized: ProductPayload = {
       barcode: form.barcode.trim(),
       sku: form.sku.trim(),
       name: form.name.trim(),
       category: form.category.trim(),
       unit: form.unit.trim(),
+      price: Number(form.price),
+      cost: Number(form.cost),
+      stockQty: Number(form.stockQty),
+      minStock: Number(form.minStock),
       supplier: form.supplier.trim(),
       location: form.location.trim(),
       description: form.description.trim(),
+      status: form.status,
     };
 
-    if (form.id === 0) {
-      setProducts((prev) => [
-        ...prev,
-        {
-          ...normalized,
-          id: Date.now(),
-        },
-      ]);
-      showSnackbar("เพิ่มสินค้าใหม่เข้าระบบเรียบร้อย", "success");
-    } else {
-      setProducts((prev) => prev.map((p) => (p.id === form.id ? normalized : p)));
-      showSnackbar("แก้ไขสินค้าเรียบร้อย", "success");
-    }
+    try {
+      setSaving(true);
 
-    closeForm();
-    focusScanInput();
+      if (form.id === 0) {
+        const created = await posApi.createProduct(normalized);
+        setProducts((prev) => [created, ...prev]);
+        showSnackbar("เพิ่มสินค้าใหม่เข้าระบบเรียบร้อย", "success");
+      } else {
+        const updated = await posApi.updateProduct(form.id, normalized);
+        setProducts((prev) =>
+          prev.map((p) => (p.id === updated.id ? updated : p))
+        );
+        showSnackbar("แก้ไขสินค้าเรียบร้อย", "success");
+      }
+
+      closeForm();
+      focusScanInput();
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : "บันทึกสินค้าไม่สำเร็จ";
+      showSnackbar(message, "error");
+    } finally {
+      setSaving(false);
+    }
   };
 
-  const confirmDelete = () => {
+  const confirmDelete = async () => {
     if (!selectedProduct) return;
 
-    setProducts((prev) => prev.filter((p) => p.id !== selectedProduct.id));
-    showSnackbar(`ลบสินค้า "${selectedProduct.name}" เรียบร้อย`, "success");
-    closeDelete();
+    try {
+      await posApi.deleteProduct(selectedProduct.id);
+      setProducts((prev) => prev.filter((p) => p.id !== selectedProduct.id));
+      showSnackbar(`ลบสินค้า "${selectedProduct.name}" เรียบร้อย`, "success");
+      closeDelete();
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : "ลบสินค้าไม่สำเร็จ";
+      showSnackbar(message, "error");
+    }
   };
-
-  const filteredProducts = useMemo(() => {
-    const q = keyword.trim().toLowerCase();
-    if (!q) return products;
-
-    return products.filter(
-      (p) =>
-        p.name.toLowerCase().includes(q) ||
-        p.barcode.toLowerCase().includes(q) ||
-        p.sku.toLowerCase().includes(q) ||
-        p.category.toLowerCase().includes(q) ||
-        p.supplier.toLowerCase().includes(q) ||
-        String(p.price).includes(q)
-    );
-  }, [products, keyword]);
 
   const totalStock = useMemo(
     () => products.reduce((sum, item) => sum + item.stockQty, 0),
     [products]
   );
 
-  const lowStockCount = useMemo(
-    () => products.filter((item) => item.stockQty <= item.minStock).length,
+  const outOfStockCount = useMemo(
+    () => products.filter((item) => item.stockQty <= 0).length,
     [products]
   );
 
+  const lowStockCount = useMemo(
+    () =>
+      products.filter(
+        (item) => item.stockQty > 0 && item.stockQty <= item.minStock
+      ).length,
+    [products]
+  );
+
+  const filteredProducts = useMemo(() => {
+    const q = keyword.trim().toLowerCase();
+
+    let rows = products;
+
+    if (stockFilter === "low") {
+      rows = rows.filter((p) => p.stockQty > 0 && p.stockQty <= p.minStock);
+    } else if (stockFilter === "out") {
+      rows = rows.filter((p) => p.stockQty <= 0);
+    }
+
+    if (!q) return rows;
+
+    return rows.filter(
+      (p) =>
+        p.name.toLowerCase().includes(q) ||
+        p.barcode.toLowerCase().includes(q) ||
+        String(p.price).includes(q)
+    );
+  }, [products, keyword, stockFilter]);
+
+  const tableTitleText =
+    stockFilter === "all"
+      ? "แสดงข้อมูลสินค้าแบบย่อและเลื่อนดูเฉพาะในตาราง"
+      : stockFilter === "low"
+      ? "กำลังแสดงสินค้าใกล้หมด"
+      : "กำลังแสดงสินค้าหมดสต๊อก";
+
   return (
-    <Box sx={{ minHeight: "100%" }}>
+    <Box
+      sx={{
+        minHeight: "100vh",
+        display: "flex",
+        flexDirection: "column",
+        overflow: "hidden",
+      }}
+    >
       <Box
         sx={{
-          mb: 3,
+          mb: 2,
           p: 3,
           borderRadius: 5,
           background:
             "linear-gradient(135deg, #0f172a 0%, #18253c 45%, #344256 100%)",
           color: "#fff",
           boxShadow: "0 18px 34px rgba(15, 23, 42, 0.14)",
+          flexShrink: 0,
         }}
       >
         <Stack
@@ -379,7 +411,7 @@ export default function Products() {
             direction="row"
             spacing={1.5}
             alignItems="center"
-            sx={{ minWidth: 0, flex: 1, }}
+            sx={{ minWidth: 0, flex: 1 }}
           >
             <Avatar
               sx={{
@@ -416,105 +448,54 @@ export default function Products() {
           </Stack>
 
           <Stack
-            spacing={1.4}
-            alignItems={{ xs: "stretch", lg: "flex-end" }}
-            sx={{ width: { xs: "100%", lg: "auto" } }}
+            direction={{ xs: "column", sm: "row" }}
+            spacing={1}
+            justifyContent={{ xs: "stretch", lg: "flex-end" }}
           >
-            <Stack
-              direction="row"
-              spacing={1}
-              flexWrap="wrap"
-              useFlexGap
-              justifyContent={{ xs: "flex-start", lg: "flex-end" }}
+            <Button
+              variant="contained"
+              startIcon={<AddRoundedIcon />}
+              onClick={openAdd}
+              sx={{
+                borderRadius: 4,
+                px: 2.4,
+                py: 1.2,
+                minWidth: 150,
+                fontWeight: 900,
+                textTransform: "none",
+                color: "#111827",
+                background: "#fff",
+                boxShadow: "0 10px 22px rgba(0,0,0,0.12)",
+                "&:hover": {
+                  background: "#f8fafc",
+                },
+              }}
             >
-              <Chip
-                label={`${products.length} รายการ`}
-                sx={{
-                  height: 36,
-                  borderRadius: 999,
-                  fontWeight: 800,
-                  color: "#fff",
-                  bgcolor: "rgba(255,255,255,0.1)",
-                  border: "1px solid rgba(255,255,255,0.14)",
-                }}
-              />
-              <Chip
-                label={`สต๊อกรวม ${totalStock}`}
-                sx={{
-                  height: 36,
-                  borderRadius: 999,
-                  fontWeight: 800,
-                  color: "#fff",
-                  bgcolor: "rgba(255,255,255,0.1)",
-                  border: "1px solid rgba(255,255,255,0.14)",
-                }}
-              />
-              <Chip
-                label={`ใกล้หมด ${lowStockCount}`}
-                sx={{
-                  height: 36,
-                  borderRadius: 999,
-                  fontWeight: 800,
-                  color: "#fff",
-                  bgcolor:
-                    lowStockCount > 0
-                      ? "rgba(245,158,11,0.22)"
-                      : "rgba(255,255,255,0.1)",
-                  border: "1px solid rgba(255,255,255,0.14)",
-                }}
-              />
-            </Stack>
+              เพิ่มสินค้า
+            </Button>
 
-            <Stack
-              direction={{ xs: "column", sm: "row" }}
-              spacing={1}
-              justifyContent={{ xs: "stretch", lg: "flex-end" }}
+            <Button
+              variant="outlined"
+              startIcon={<QrCodeScannerRoundedIcon />}
+              onClick={focusScanInput}
+              sx={{
+                borderRadius: 4,
+                px: 2.4,
+                py: 1.2,
+                minWidth: 170,
+                fontWeight: 800,
+                textTransform: "none",
+                color: "#fff",
+                borderColor: "rgba(255,255,255,0.2)",
+                background: "rgba(255,255,255,0.04)",
+                "&:hover": {
+                  borderColor: "rgba(255,255,255,0.35)",
+                  background: "rgba(255,255,255,0.08)",
+                },
+              }}
             >
-              <Button
-                variant="contained"
-                startIcon={<AddRoundedIcon />}
-                onClick={openAdd}
-                sx={{
-                  borderRadius: 4,
-                  px: 2.4,
-                  py: 1.2,
-                  minWidth: 150,
-                  fontWeight: 900,
-                  textTransform: "none",
-                  color: "#111827",
-                  background: "#fff",
-                  boxShadow: "0 10px 22px rgba(0,0,0,0.12)",
-                  "&:hover": {
-                    background: "#f8fafc",
-                  },
-                }}
-              >
-                เพิ่มสินค้า
-              </Button>
-
-              <Button
-                variant="outlined"
-                startIcon={<QrCodeScannerRoundedIcon />}
-                onClick={focusScanInput}
-                sx={{
-                  borderRadius: 4,
-                  px: 2.4,
-                  py: 1.2,
-                  minWidth: 170,
-                  fontWeight: 800,
-                  textTransform: "none",
-                  color: "#fff",
-                  borderColor: "rgba(255,255,255,0.2)",
-                  background: "rgba(255,255,255,0.04)",
-                  "&:hover": {
-                    borderColor: "rgba(255,255,255,0.35)",
-                    background: "rgba(255,255,255,0.08)",
-                  },
-                }}
-              >
-                โฟกัสช่องยิงบาร์โค้ด
-              </Button>
-            </Stack>
+              โฟกัสช่องยิงบาร์โค้ด
+            </Button>
           </Stack>
         </Stack>
       </Box>
@@ -528,13 +509,14 @@ export default function Products() {
           border: "1px solid #e5e7eb",
           background: "#fff",
           boxShadow: "0 8px 24px rgba(15, 23, 42, 0.05)",
+          flexShrink: 0,
         }}
       >
         <Grid container spacing={2}>
           <Grid size={{ xs: 12, md: 7 }}>
             <TextField
               fullWidth
-              placeholder="ค้นหาด้วยชื่อสินค้า บาร์โค้ด รหัสสินค้า หมวดหมู่ ผู้จำหน่าย หรือราคา"
+              placeholder="ค้นหาด้วยชื่อสินค้า บาร์โค้ด หรือราคา"
               value={keyword}
               onChange={(e) => setKeyword(e.target.value)}
               sx={{
@@ -574,7 +556,6 @@ export default function Products() {
                   </InputAdornment>
                 ),
               }}
-              helperText="ยิงเสร็จแล้วระบบจะเพิ่มจำนวนสินค้าให้อัตโนมัติ"
             />
           </Grid>
         </Grid>
@@ -583,52 +564,164 @@ export default function Products() {
       <Paper
         elevation={0}
         sx={{
+          display: "flex",
+          flexDirection: "column",
           overflow: "hidden",
           borderRadius: 5,
           border: "1px solid #e5e7eb",
           background: "#fff",
           boxShadow: "0 10px 28px rgba(15, 23, 42, 0.06)",
+          minHeight: 0,
+          flex: 1,
         }}
       >
         <Box
           sx={{
             px: 2.5,
-            py: 2,
+            py: 1.8,
             background: "linear-gradient(180deg, #ffffff 0%, #fafafa 100%)",
+            borderBottom: "1px solid #eef2f7",
+            flexShrink: 0,
           }}
         >
-          <Typography fontSize={18} fontWeight={800} color="#111827">
-            รายการสินค้าในระบบ
-          </Typography>
-          <Typography variant="body2" color="text.secondary">
-            สินค้าแต่ละชนิดมี 1 รายการ และใช้การยิงบาร์โค้ดเพื่อเพิ่มจำนวนสต๊อก
-          </Typography>
+          <Stack
+            direction="row"
+            alignItems="center"
+            justifyContent="space-between"
+            spacing={2}
+            sx={{
+              minWidth: 0,
+              flexWrap: "nowrap",
+            }}
+          >
+            <Box sx={{ minWidth: 0, flex: 1 }}>
+              <Typography fontSize={18} fontWeight={800} color="#111827" noWrap>
+                รายการสินค้าในระบบ
+              </Typography>
+              <Typography variant="body2" color="text.secondary" noWrap>
+                {tableTitleText}
+              </Typography>
+            </Box>
+
+            <Stack
+              direction="row"
+              spacing={1}
+              alignItems="center"
+              justifyContent="flex-end"
+              sx={{
+                flexShrink: 0,
+                flexWrap: "nowrap",
+                whiteSpace: "nowrap",
+              }}
+            >
+              {loading && (
+                <Stack
+                  direction="row"
+                  spacing={1}
+                  alignItems="center"
+                  sx={{ mr: 0.5 }}
+                >
+                  <CircularProgress size={16} />
+                </Stack>
+              )}
+
+              <Chip
+                clickable
+                label={`${products.length} รายการ`}
+                onClick={() => setStockFilter("all")}
+                sx={{
+                  height: 34,
+                  borderRadius: 999,
+                  fontWeight: 800,
+                  bgcolor: stockFilter === "all" ? "#e2e8f0" : "#f8fafc",
+                  color: "#0f172a",
+                  border: "1px solid #e2e8f0",
+                  cursor: "pointer",
+                }}
+              />
+
+              <Chip
+                label={`สต๊อกรวม ${totalStock}`}
+                sx={{
+                  height: 34,
+                  borderRadius: 999,
+                  fontWeight: 800,
+                  bgcolor: "#f8fafc",
+                  color: "#0f172a",
+                  border: "1px solid #e2e8f0",
+                }}
+              />
+
+              <Chip
+                clickable
+                label={`ใกล้หมด ${lowStockCount}`}
+                onClick={() => setStockFilter("low")}
+                sx={{
+                  height: 34,
+                  borderRadius: 999,
+                  fontWeight: 800,
+                  color: "#c2410c",
+                  bgcolor: stockFilter === "low" ? "#fed7aa" : "#fff7ed",
+                  border: "1px solid #fed7aa",
+                  cursor: "pointer",
+                }}
+              />
+
+              <Chip
+                clickable
+                label={`หมด ${outOfStockCount}`}
+                onClick={() => setStockFilter("out")}
+                sx={{
+                  height: 34,
+                  borderRadius: 999,
+                  fontWeight: 800,
+                  color: "#991b1b",
+                  bgcolor: stockFilter === "out" ? "#fecaca" : "#fef2f2",
+                  border: "1px solid #fecaca",
+                  cursor: "pointer",
+                }}
+              />
+            </Stack>
+          </Stack>
         </Box>
 
-        <Divider />
-
-        <Box sx={{ overflowX: "auto" }}>
-          <Table>
+        <Box
+          sx={{
+            flex: 1,
+            minHeight: 0,
+            overflow: "auto",
+          }}
+        >
+          <Table
+            stickyHeader
+            sx={{
+              width: "100%",
+              tableLayout: "fixed",
+              minWidth: 0,
+              "& .MuiTableCell-root": {
+                overflow: "hidden",
+              },
+            }}
+          >
             <TableHead>
               <TableRow
                 sx={{
-                  background: "#f9fafb",
                   "& .MuiTableCell-root": {
+                    background: "#f9fafb",
                     borderBottom: "1px solid #e5e7eb",
                     fontWeight: 800,
                     color: "#374151",
-                    py: 1.8,
+                    py: 1.6,
                     whiteSpace: "nowrap",
+                    textAlign: "left",
                   },
                 }}
               >
-                <TableCell>สินค้า</TableCell>
-                <TableCell>หมวดหมู่</TableCell>
-                <TableCell>ราคาขาย</TableCell>
-                <TableCell>ต้นทุน</TableCell>
-                <TableCell>สต๊อก</TableCell>
-                <TableCell>สถานะ</TableCell>
-                <TableCell width={180} align="center">
+                <TableCell sx={{ width: "38%" }}>ชื่อสินค้า</TableCell>
+                <TableCell sx={{ width: "24%" }}>Barcode</TableCell>
+                <TableCell sx={{ width: "16%" }}>ราคาขาย</TableCell>
+                <TableCell sx={{ width: "12%" }}>สต๊อก</TableCell>
+                <TableCell sx={{ width: "20%" }} align="left">
                   จัดการ
                 </TableCell>
               </TableRow>
@@ -636,174 +729,111 @@ export default function Products() {
 
             <TableBody>
               {filteredProducts.map((p) => {
-                const isLowStock = p.stockQty <= p.minStock;
+                const isOutOfStock = p.stockQty <= 0;
+                const isLowStock = !isOutOfStock && p.stockQty <= p.minStock;
 
                 return (
                   <TableRow
                     key={p.id}
                     hover
                     sx={{
+                      backgroundColor: isOutOfStock
+                        ? "#fef2f2"
+                        : isLowStock
+                        ? "#fff7ed"
+                        : "transparent",
                       transition: "all 0.2s ease",
                       "&:hover": {
-                        background: "#fcfcfd",
+                        backgroundColor: isOutOfStock
+                          ? "#fee2e2"
+                          : isLowStock
+                          ? "#ffedd5"
+                          : "#fcfcfd",
                       },
                       "& .MuiTableCell-root": {
+                        backgroundColor: "inherit",
                         borderBottom: "1px solid #f1f5f9",
-                        py: 1.8,
-                        verticalAlign: "top",
+                        py: 1.4,
+                        verticalAlign: "middle",
+                        textAlign: "left",
                       },
                     }}
                   >
+                    <TableCell sx={{ minWidth: 0 }}>
+                      <Typography
+                        fontWeight={800}
+                        color="#111827"
+                        noWrap
+                        title={p.name}
+                        sx={{ textAlign: "left" }}
+                      >
+                        {p.name}
+                      </Typography>
+                    </TableCell>
+
+                    <TableCell sx={{ minWidth: 0 }}>
+                      <Typography
+                        variant="body2"
+                        color="text.secondary"
+                        noWrap
+                        title={p.barcode}
+                        sx={{ textAlign: "left", fontWeight: 600 }}
+                      >
+                        {p.barcode}
+                      </Typography>
+                    </TableCell>
+
                     <TableCell>
-                      <Stack direction="row" spacing={1.2} alignItems="flex-start">
-                        <Avatar
+                      <Typography
+                        fontWeight={700}
+                        color="#111827"
+                        noWrap
+                        sx={{ textAlign: "left" }}
+                      >
+                        {formatCurrency(p.price)}
+                      </Typography>
+                    </TableCell>
+
+                    <TableCell>
+                      <Typography
+                        fontWeight={800}
+                        noWrap
+                        sx={{
+                          textAlign: "left",
+                          color: isOutOfStock
+                            ? "#991b1b"
+                            : isLowStock
+                            ? "#c2410c"
+                            : "#111827",
+                        }}
+                      >
+                        {p.stockQty} {p.unit}
+                      </Typography>
+                    </TableCell>
+
+                    <TableCell align="left">
+                      <Stack
+                        direction="row"
+                        spacing={1}
+                        justifyContent="flex-start"
+                        alignItems="center"
+                        flexWrap="nowrap"
+                      >
+                        <IconButton
+                          onClick={() => openEdit(p)}
                           sx={{
                             width: 40,
                             height: 40,
                             borderRadius: 3,
-                            bgcolor: "#f3f4f6",
-                            color: "#6b7280",
-                          }}
-                        >
-                          <QrCode2RoundedIcon fontSize="small" />
-                        </Avatar>
-
-                        <Box minWidth={220}>
-                          <Typography fontWeight={800} color="#111827">
-                            {p.name}
-                          </Typography>
-                          <Typography variant="body2" color="text.secondary">
-                            SKU: {p.sku}
-                          </Typography>
-                          <Typography variant="body2" color="text.secondary">
-                            Barcode: {p.barcode}
-                          </Typography>
-                          {p.supplier && (
-                            <Typography variant="body2" color="text.secondary">
-                              Supplier: {p.supplier}
-                            </Typography>
-                          )}
-                        </Box>
-                      </Stack>
-                    </TableCell>
-
-                    <TableCell>
-                      <Chip
-                        icon={<CategoryRoundedIcon />}
-                        label={p.category || "-"}
-                        sx={{
-                          borderRadius: 999,
-                          fontWeight: 700,
-                          bgcolor: "#f8fafc",
-                          border: "1px solid #e5e7eb",
-                        }}
-                      />
-                    </TableCell>
-
-                    <TableCell>
-                      <Chip
-                        icon={<SellRoundedIcon />}
-                        label={formatCurrency(p.price)}
-                        sx={{
-                          borderRadius: 999,
-                          fontWeight: 800,
-                          bgcolor: "#ecfeff",
-                          color: "#0f172a",
-                          border: "1px solid #bae6fd",
-                        }}
-                      />
-                    </TableCell>
-
-                    <TableCell>
-                      <Chip
-                        icon={<PaymentsRoundedIcon />}
-                        label={formatCurrency(p.cost)}
-                        sx={{
-                          borderRadius: 999,
-                          fontWeight: 700,
-                          bgcolor: "#f8fafc",
-                          color: "#111827",
-                          border: "1px solid #e5e7eb",
-                        }}
-                      />
-                    </TableCell>
-
-                    <TableCell>
-                      <Stack spacing={0.8}>
-                        <Typography fontWeight={800} color="#111827">
-                          {p.stockQty} {p.unit}
-                        </Typography>
-                        <Typography variant="body2" color="text.secondary">
-                          ขั้นต่ำ {p.minStock} {p.unit}
-                        </Typography>
-                        {isLowStock && (
-                          <Chip
-                            size="small"
-                            label="สต๊อกใกล้หมด"
-                            sx={{
-                              width: "fit-content",
-                              fontWeight: 800,
-                              bgcolor: "#fff7ed",
-                              color: "#c2410c",
-                              border: "1px solid #fed7aa",
-                            }}
-                          />
-                        )}
-                      </Stack>
-                    </TableCell>
-
-                    <TableCell>
-                      <Chip
-                        label={p.status === "active" ? "ขายอยู่" : "งดขาย"}
-                        sx={{
-                          borderRadius: 999,
-                          fontWeight: 800,
-                          color: p.status === "active" ? "#166534" : "#991b1b",
-                          bgcolor: p.status === "active" ? "#f0fdf4" : "#fef2f2",
-                          border:
-                            p.status === "active"
-                              ? "1px solid #bbf7d0"
-                              : "1px solid #fecaca",
-                        }}
-                      />
-                    </TableCell>
-
-                    <TableCell align="center">
-                      <Stack
-                        direction="row"
-                        spacing={1}
-                        justifyContent="center"
-                        alignItems="center"
-                      >
-                        <IconButton
-                          onClick={() => increaseStockByBarcode(p.barcode, 1)}
-                          sx={{
-                            width: 42,
-                            height: 42,
-                            borderRadius: 3,
-                            bgcolor: "#eff6ff",
-                            border: "1px solid #bfdbfe",
-                            color: "#2563eb",
-                            "&:hover": {
-                              bgcolor: "#dbeafe",
-                            },
-                          }}
-                        >
-                          <AddCircleOutlineRoundedIcon fontSize="small" />
-                        </IconButton>
-
-                        <IconButton
-                          onClick={() => openEdit(p)}
-                          sx={{
-                            width: 42,
-                            height: 42,
-                            borderRadius: 3,
-                            bgcolor: "#eef2ff",
+                            color: "#4338ca",
+                            backgroundColor: "#eef2ff",
                             border: "1px solid #c7d2fe",
-                            color: "#4f46e5",
+                            boxShadow: "0 4px 10px rgba(79,70,229,0.12)",
                             "&:hover": {
-                              bgcolor: "#e0e7ff",
+                              backgroundColor: "#e0e7ff",
+                              transform: "translateY(-1px)",
                             },
+                            transition: "all 0.18s ease",
                           }}
                         >
                           <EditRoundedIcon fontSize="small" />
@@ -812,15 +842,18 @@ export default function Products() {
                         <IconButton
                           onClick={() => askDelete(p)}
                           sx={{
-                            width: 42,
-                            height: 42,
+                            width: 40,
+                            height: 40,
                             borderRadius: 3,
-                            bgcolor: "#fef2f2",
+                            color: "#dc2626",
+                            backgroundColor: "#fef2f2",
                             border: "1px solid #fecaca",
-                            color: "#ef4444",
+                            boxShadow: "0 4px 10px rgba(239,68,68,0.12)",
                             "&:hover": {
-                              bgcolor: "#fee2e2",
+                              backgroundColor: "#fee2e2",
+                              transform: "translateY(-1px)",
                             },
+                            transition: "all 0.18s ease",
                           }}
                         >
                           <DeleteOutlineRoundedIcon fontSize="small" />
@@ -831,9 +864,9 @@ export default function Products() {
                 );
               })}
 
-              {filteredProducts.length === 0 && (
+              {!loading && filteredProducts.length === 0 && (
                 <TableRow>
-                  <TableCell colSpan={7} align="center" sx={{ py: 8 }}>
+                  <TableCell colSpan={5} align="center" sx={{ py: 8 }}>
                     <Stack spacing={1.5} alignItems="center">
                       <Avatar
                         sx={{
@@ -848,29 +881,29 @@ export default function Products() {
                       </Avatar>
 
                       <Typography variant="h6" fontWeight={800} color="#111827">
-                        {products.length === 0 ? "ยังไม่มีสินค้าในระบบ" : "ไม่พบข้อมูลสินค้า"}
+                        {products.length === 0
+                          ? "ยังไม่มีสินค้าในระบบ"
+                          : "ไม่พบข้อมูลสินค้า"}
                       </Typography>
 
                       <Typography variant="body2" color="text.secondary">
                         {products.length === 0
-                          ? "เริ่มต้นด้วยการเพิ่มสินค้าใหม่ แล้วใช้การยิงบาร์โค้ดเพิ่มจำนวน"
-                          : "ลองค้นหาด้วยชื่อสินค้า บาร์โค้ด รหัสสินค้า หรือหมวดหมู่"}
+                          ? "เริ่มต้นด้วยการเพิ่มสินค้าใหม่"
+                          : "ลองค้นหาด้วยชื่อสินค้า หรือบาร์โค้ด"}
                       </Typography>
 
                       {products.length === 0 && (
                         <Button
                           variant="contained"
-                          startIcon={<AddRoundedIcon />}
                           onClick={openAdd}
                           sx={{
                             mt: 1,
-                            borderRadius: 4,
+                            borderRadius: 3,
                             px: 2.5,
-                            py: 1.1,
+                            py: 1,
                             textTransform: "none",
                             fontWeight: 800,
-                            background:
-                              "linear-gradient(135deg, #111827 0%, #000000 100%)",
+                            boxShadow: "none",
                           }}
                         >
                           เพิ่มสินค้า
@@ -887,7 +920,7 @@ export default function Products() {
 
       <Dialog
         open={openForm}
-        onClose={closeForm}
+        onClose={saving ? undefined : closeForm}
         fullWidth
         maxWidth="md"
         PaperProps={{
@@ -976,11 +1009,7 @@ export default function Products() {
                     fullWidth
                     required
                     helperText="ใช้ยิงเพื่อเพิ่มสต๊อกและใช้ขายสินค้า"
-                    sx={{
-                      "& .MuiOutlinedInput-root": {
-                        borderRadius: 4,
-                      },
-                    }}
+                    sx={{ "& .MuiOutlinedInput-root": { borderRadius: 4 } }}
                   />
                 </Grid>
 
@@ -992,11 +1021,7 @@ export default function Products() {
                     fullWidth
                     required
                     helperText="รหัสอ้างอิงสินค้าในระบบ"
-                    sx={{
-                      "& .MuiOutlinedInput-root": {
-                        borderRadius: 4,
-                      },
-                    }}
+                    sx={{ "& .MuiOutlinedInput-root": { borderRadius: 4 } }}
                   />
                 </Grid>
 
@@ -1007,11 +1032,7 @@ export default function Products() {
                     onChange={(e) => updateForm("name", e.target.value)}
                     fullWidth
                     required
-                    sx={{
-                      "& .MuiOutlinedInput-root": {
-                        borderRadius: 4,
-                      },
-                    }}
+                    sx={{ "& .MuiOutlinedInput-root": { borderRadius: 4 } }}
                   />
                 </Grid>
 
@@ -1023,11 +1044,7 @@ export default function Products() {
                     onChange={(e) => updateForm("category", e.target.value)}
                     fullWidth
                     required
-                    sx={{
-                      "& .MuiOutlinedInput-root": {
-                        borderRadius: 4,
-                      },
-                    }}
+                    sx={{ "& .MuiOutlinedInput-root": { borderRadius: 4 } }}
                   >
                     {categoryOptions.map((item) => (
                       <MenuItem key={item} value={item}>
@@ -1045,11 +1062,7 @@ export default function Products() {
                     onChange={(e) => updateForm("unit", e.target.value)}
                     fullWidth
                     required
-                    sx={{
-                      "& .MuiOutlinedInput-root": {
-                        borderRadius: 4,
-                      },
-                    }}
+                    sx={{ "& .MuiOutlinedInput-root": { borderRadius: 4 } }}
                   >
                     {unitOptions.map((item) => (
                       <MenuItem key={item} value={item}>
@@ -1098,13 +1111,11 @@ export default function Products() {
                         ? `ราคาขาย: ${formatCurrency(form.price)}`
                         : "ราคาขายต้องมากกว่า 0"
                     }
-                    sx={{
-                      "& .MuiOutlinedInput-root": {
-                        borderRadius: 4,
-                      },
-                    }}
+                    sx={{ "& .MuiOutlinedInput-root": { borderRadius: 4 } }}
                     InputProps={{
-                      endAdornment: <InputAdornment position="end">บาท</InputAdornment>,
+                      endAdornment: (
+                        <InputAdornment position="end">บาท</InputAdornment>
+                      ),
                     }}
                   />
                 </Grid>
@@ -1117,15 +1128,15 @@ export default function Products() {
                     onChange={(e) => updateForm("cost", Number(e.target.value))}
                     fullWidth
                     helperText={
-                      form.cost > 0 ? `ต้นทุน: ${formatCurrency(form.cost)}` : "ใส่ 0 ได้"
+                      form.cost > 0
+                        ? `ต้นทุน: ${formatCurrency(form.cost)}`
+                        : "ใส่ 0 ได้"
                     }
-                    sx={{
-                      "& .MuiOutlinedInput-root": {
-                        borderRadius: 4,
-                      },
-                    }}
+                    sx={{ "& .MuiOutlinedInput-root": { borderRadius: 4 } }}
                     InputProps={{
-                      endAdornment: <InputAdornment position="end">บาท</InputAdornment>,
+                      endAdornment: (
+                        <InputAdornment position="end">บาท</InputAdornment>
+                      ),
                     }}
                   />
                 </Grid>
@@ -1139,14 +1150,12 @@ export default function Products() {
                     fullWidth
                     required
                     helperText="เพิ่มสินค้าใหม่ครั้งแรกใส่จำนวนเริ่มต้นได้"
-                    sx={{
-                      "& .MuiOutlinedInput-root": {
-                        borderRadius: 4,
-                      },
-                    }}
+                    sx={{ "& .MuiOutlinedInput-root": { borderRadius: 4 } }}
                     InputProps={{
                       endAdornment: (
-                        <InputAdornment position="end">{form.unit || "ชิ้น"}</InputAdornment>
+                        <InputAdornment position="end">
+                          {form.unit || "ชิ้น"}
+                        </InputAdornment>
                       ),
                     }}
                   />
@@ -1160,14 +1169,12 @@ export default function Products() {
                     onChange={(e) => updateForm("minStock", Number(e.target.value))}
                     fullWidth
                     helperText="ถ้าต่ำกว่าหรือเท่าจะแจ้งว่าใกล้หมด"
-                    sx={{
-                      "& .MuiOutlinedInput-root": {
-                        borderRadius: 4,
-                      },
-                    }}
+                    sx={{ "& .MuiOutlinedInput-root": { borderRadius: 4 } }}
                     InputProps={{
                       endAdornment: (
-                        <InputAdornment position="end">{form.unit || "ชิ้น"}</InputAdornment>
+                        <InputAdornment position="end">
+                          {form.unit || "ชิ้น"}
+                        </InputAdornment>
                       ),
                     }}
                   />
@@ -1182,11 +1189,7 @@ export default function Products() {
                       updateForm("status", e.target.value as Product["status"])
                     }
                     fullWidth
-                    sx={{
-                      "& .MuiOutlinedInput-root": {
-                        borderRadius: 4,
-                      },
-                    }}
+                    sx={{ "& .MuiOutlinedInput-root": { borderRadius: 4 } }}
                   >
                     {statusOptions.map((item) => (
                       <MenuItem key={item.value} value={item.value}>
@@ -1216,9 +1219,9 @@ export default function Products() {
                     color: "#111827",
                   }}
                 >
-                  <WarehouseRoundedIcon fontSize="small" />
+                  <LocalShippingRoundedIcon fontSize="small" />
                 </Avatar>
-                <Typography fontWeight={900}>ข้อมูลเสริม</Typography>
+                <Typography fontWeight={900}>ข้อมูลเพิ่มเติม</Typography>
               </Stack>
 
               <Grid container spacing={2}>
@@ -1228,18 +1231,7 @@ export default function Products() {
                     value={form.supplier}
                     onChange={(e) => updateForm("supplier", e.target.value)}
                     fullWidth
-                    sx={{
-                      "& .MuiOutlinedInput-root": {
-                        borderRadius: 4,
-                      },
-                    }}
-                    InputProps={{
-                      startAdornment: (
-                        <InputAdornment position="start">
-                          <LocalShippingRoundedIcon fontSize="small" />
-                        </InputAdornment>
-                      ),
-                    }}
+                    sx={{ "& .MuiOutlinedInput-root": { borderRadius: 4 } }}
                   />
                 </Grid>
 
@@ -1249,16 +1241,11 @@ export default function Products() {
                     value={form.location}
                     onChange={(e) => updateForm("location", e.target.value)}
                     fullWidth
-                    helperText="เช่น ชั้น A2 / ห้องเก็บของ"
-                    sx={{
-                      "& .MuiOutlinedInput-root": {
-                        borderRadius: 4,
-                      },
-                    }}
+                    sx={{ "& .MuiOutlinedInput-root": { borderRadius: 4 } }}
                     InputProps={{
                       startAdornment: (
                         <InputAdornment position="start">
-                          <InventoryRoundedIcon fontSize="small" />
+                          <WarehouseRoundedIcon sx={{ color: "#6b7280" }} />
                         </InputAdornment>
                       ),
                     }}
@@ -1273,11 +1260,7 @@ export default function Products() {
                     fullWidth
                     multiline
                     minRows={3}
-                    sx={{
-                      "& .MuiOutlinedInput-root": {
-                        borderRadius: 4,
-                      },
-                    }}
+                    sx={{ "& .MuiOutlinedInput-root": { borderRadius: 4 } }}
                   />
                 </Grid>
               </Grid>
@@ -1285,24 +1268,16 @@ export default function Products() {
           </Stack>
         </DialogContent>
 
-        <DialogActions
-          sx={{
-            px: 3,
-            pb: 3,
-            pt: 2,
-            gap: 1,
-            borderTop: "1px solid #e5e7eb",
-            background: "#fff",
-          }}
-        >
+        <DialogActions sx={{ px: 3, py: 2.2, borderTop: "1px solid #f1f5f9" }}>
           <Button
             onClick={closeForm}
+            disabled={saving}
             sx={{
               borderRadius: 3,
               px: 2.2,
-              fontWeight: 700,
               textTransform: "none",
-              color: "#374151",
+              fontWeight: 700,
+              color: "#475569",
             }}
           >
             ยกเลิก
@@ -1311,18 +1286,23 @@ export default function Products() {
           <Button
             variant="contained"
             onClick={saveProduct}
+            disabled={saving}
+            startIcon={
+              saving ? (
+                <CircularProgress size={16} color="inherit" />
+              ) : (
+                <InventoryRoundedIcon />
+              )
+            }
             sx={{
               borderRadius: 3,
-              px: 2.8,
-              fontWeight: 800,
+              px: 2.5,
               textTransform: "none",
-              background: "#111827",
-              "&:hover": {
-                background: "#000",
-              },
+              fontWeight: 800,
+              boxShadow: "none",
             }}
           >
-            {form.id === 0 ? "บันทึกสินค้า" : "บันทึกการแก้ไข"}
+            {saving ? "กำลังบันทึก..." : form.id === 0 ? "บันทึกสินค้า" : "บันทึกการแก้ไข"}
           </Button>
         </DialogActions>
       </Dialog>
@@ -1331,197 +1311,64 @@ export default function Products() {
         open={openDelete}
         onClose={closeDelete}
         fullWidth
-        maxWidth="sm"
+        maxWidth="xs"
         PaperProps={{
           sx: {
-            borderRadius: 6,
-            overflow: "hidden",
+            borderRadius: 5,
           },
         }}
       >
-        <DialogTitle
-          sx={{
-            px: 3,
-            py: 2.5,
-            fontWeight: 900,
-            background: "linear-gradient(135deg, #fff7ed 0%, #fff1f2 100%)",
-            color: "#9a3412",
-            borderBottom: "1px solid #fed7aa",
-          }}
-        >
-          ยืนยันการลบสินค้า
-        </DialogTitle>
+        <DialogTitle sx={{ fontWeight: 900 }}>ยืนยันการลบสินค้า</DialogTitle>
 
-        <DialogContent sx={{ p: 3 }}>
-          <Stack spacing={2.2} sx={{ mt: 0.5 }}>
-            <Stack direction="row" spacing={1.5} alignItems="flex-start">
-              <Avatar
-                sx={{
-                  width: 48,
-                  height: 48,
-                  bgcolor: "#fff1f2",
-                  color: "#ef4444",
-                  borderRadius: 3,
-                }}
-              >
-                <WarningAmberRoundedIcon />
-              </Avatar>
-
-              <Box>
-                <Typography fontWeight={900} color="#111827" mb={0.5}>
-                  คุณกำลังจะลบสินค้านี้ออกจากระบบ
-                </Typography>
-                <Typography variant="body2" color="text.secondary">
-                  เมื่อลบแล้ว รายการนี้จะหายจากหน้าจัดการสินค้า
-                </Typography>
-              </Box>
-            </Stack>
-
-            <Box
+        <DialogContent>
+          <Stack direction="row" spacing={1.2} alignItems="flex-start">
+            <Avatar
               sx={{
-                p: 2,
-                borderRadius: 4,
-                border: "1px solid #fee2e2",
-                background: "linear-gradient(180deg, #ffffff 0%, #fffafa 100%)",
-              }}
-            >
-              <Stack direction="row" spacing={1.4} alignItems="flex-start">
-                <Avatar
-                  sx={{
-                    width: 44,
-                    height: 44,
-                    borderRadius: 3,
-                    bgcolor: "#fef2f2",
-                    color: "#ef4444",
-                  }}
-                >
-                  <Inventory2RoundedIcon />
-                </Avatar>
-
-                <Box flex={1}>
-                  <Typography fontWeight={900} color="#111827">
-                    {selectedProduct?.name || "-"}
-                  </Typography>
-
-                  <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap mt={1}>
-                    <Chip
-                      size="small"
-                      label={`SKU: ${selectedProduct?.sku || "-"}`}
-                      sx={{ borderRadius: 999, fontWeight: 700 }}
-                    />
-                    <Chip
-                      size="small"
-                      label={`Barcode: ${selectedProduct?.barcode || "-"}`}
-                      sx={{ borderRadius: 999, fontWeight: 700 }}
-                    />
-                    <Chip
-                      size="small"
-                      label={`ราคา ${
-                        selectedProduct ? formatCurrency(selectedProduct.price) : "-"
-                      }`}
-                      sx={{ borderRadius: 999, fontWeight: 700 }}
-                    />
-                    <Chip
-                      size="small"
-                      label={`สต๊อก ${selectedProduct?.stockQty ?? "-"} ${
-                        selectedProduct?.unit || ""
-                      }`}
-                      sx={{ borderRadius: 999, fontWeight: 700 }}
-                    />
-                  </Stack>
-
-                  <Grid container spacing={1.5} sx={{ mt: 1 }}>
-                    <Grid size={{ xs: 12, md: 6 }}>
-                      <Typography variant="body2" color="text.secondary">
-                        หมวดหมู่
-                      </Typography>
-                      <Typography fontWeight={700}>
-                        {selectedProduct?.category || "-"}
-                      </Typography>
-                    </Grid>
-
-                    <Grid size={{ xs: 12, md: 6 }}>
-                      <Typography variant="body2" color="text.secondary">
-                        ผู้จำหน่าย
-                      </Typography>
-                      <Typography fontWeight={700}>
-                        {selectedProduct?.supplier || "-"}
-                      </Typography>
-                    </Grid>
-
-                    <Grid size={{ xs: 12, md: 6 }}>
-                      <Typography variant="body2" color="text.secondary">
-                        ตำแหน่งจัดเก็บ
-                      </Typography>
-                      <Typography fontWeight={700}>
-                        {selectedProduct?.location || "-"}
-                      </Typography>
-                    </Grid>
-
-                    <Grid size={{ xs: 12, md: 6 }}>
-                      <Typography variant="body2" color="text.secondary">
-                        สถานะ
-                      </Typography>
-                      <Typography fontWeight={700}>
-                        {selectedProduct?.status === "active" ? "ขายอยู่" : "งดขาย"}
-                      </Typography>
-                    </Grid>
-                  </Grid>
-                </Box>
-              </Stack>
-            </Box>
-
-            <Box
-              sx={{
-                p: 1.6,
-                borderRadius: 4,
-                border: "1px solid #fed7aa",
                 bgcolor: "#fff7ed",
+                color: "#f97316",
               }}
             >
-              <Typography fontSize={14} fontWeight={800} color="#9a3412">
-                ตรวจสอบให้แน่ใจก่อนลบ โดยเฉพาะสินค้าที่กำลังขายอยู่หรือยังมีสต๊อกคงเหลือ
+              <DeleteOutlineRoundedIcon />
+            </Avatar>
+
+            <Box>
+              <Typography fontWeight={800} color="#111827" mb={0.6}>
+                ต้องการลบสินค้านี้ใช่หรือไม่
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                {selectedProduct
+                  ? `สินค้า "${selectedProduct.name}" จะถูกลบออกจากระบบ`
+                  : "รายการสินค้านี้จะถูกลบออกจากระบบ"}
               </Typography>
             </Box>
           </Stack>
         </DialogContent>
 
-        <DialogActions
-          sx={{
-            px: 3,
-            pb: 3,
-            pt: 2,
-            gap: 1,
-            borderTop: "1px solid #f3f4f6",
-            background: "#fff",
-          }}
-        >
+        <DialogActions sx={{ px: 3, pb: 2.2 }}>
           <Button
             onClick={closeDelete}
             sx={{
               borderRadius: 3,
-              px: 2.4,
-              fontWeight: 700,
+              px: 2.2,
               textTransform: "none",
-              color: "#374151",
+              fontWeight: 700,
             }}
           >
             ยกเลิก
           </Button>
-
           <Button
             variant="contained"
             color="error"
             onClick={confirmDelete}
             sx={{
               borderRadius: 3,
-              px: 2.8,
-              fontWeight: 800,
+              px: 2.4,
               textTransform: "none",
-              boxShadow: "0 10px 20px rgba(239,68,68,0.18)",
+              fontWeight: 800,
+              boxShadow: "none",
             }}
           >
-            ยืนยันการลบสินค้า
+            ลบสินค้า
           </Button>
         </DialogActions>
       </Dialog>
@@ -1537,13 +1384,10 @@ export default function Products() {
           onClose={handleCloseSnackbar}
           severity={snackbar.severity}
           variant="filled"
-          elevation={6}
           sx={{
             width: "100%",
-            minWidth: { xs: "calc(100vw - 24px)", sm: 420 },
             borderRadius: 3,
             fontWeight: 700,
-            boxShadow: "0 16px 36px rgba(15, 23, 42, 0.18)",
             alignItems: "center",
           }}
         >
