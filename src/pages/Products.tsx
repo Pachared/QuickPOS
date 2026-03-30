@@ -383,7 +383,8 @@ export default function Products() {
   return (
     <Box
       sx={{
-        minHeight: "100vh",
+        height: "100%",
+        minHeight: 0,
         display: "flex",
         flexDirection: "column",
         overflow: "hidden",
@@ -393,11 +394,10 @@ export default function Products() {
         sx={{
           mb: 2,
           p: 3,
-          borderRadius: 5,
+          borderRadius: "25px",
           background:
             "linear-gradient(135deg, #0f172a 0%, #18253c 45%, #344256 100%)",
           color: "#fff",
-          boxShadow: "0 18px 34px rgba(15, 23, 42, 0.14)",
           flexShrink: 0,
         }}
       >
@@ -442,7 +442,7 @@ export default function Products() {
                   maxWidth: 520,
                 }}
               >
-                เพิ่มสินค้าเพียง 1 รายการต่อชนิด แล้วใช้เครื่องยิงบาร์โค้ดเพื่อเพิ่มจำนวนสต๊อกอัตโนมัติ
+                เพิ่มสินค้า 1 ครั้ง แล้วสแกนเพิ่มสต๊อก
               </Typography>
             </Box>
           </Stack>
@@ -508,7 +508,6 @@ export default function Products() {
           borderRadius: 5,
           border: "1px solid #e5e7eb",
           background: "#fff",
-          boxShadow: "0 8px 24px rgba(15, 23, 42, 0.05)",
           flexShrink: 0,
         }}
       >
@@ -570,7 +569,6 @@ export default function Products() {
           borderRadius: 5,
           border: "1px solid #e5e7eb",
           background: "#fff",
-          boxShadow: "0 10px 28px rgba(15, 23, 42, 0.06)",
           minHeight: 0,
           flex: 1,
         }}
@@ -971,7 +969,8 @@ export default function Products() {
                     แนวทางใช้งานสต๊อก
                   </Typography>
                   <Typography variant="body2" color="text.secondary">
-                    สินค้า 1 ชนิดควรมี 1 รายการในระบบเท่านั้น จากนั้นใช้เครื่องยิงบาร์โค้ดยิงซ้ำเพื่อเพิ่มจำนวนสินค้าในสต๊อก
+                    สินค้า 1 ชนิดควรมี 1 รายการในระบบเท่านั้น
+                    จากนั้นใช้เครื่องยิงบาร์โค้ดยิงซ้ำเพื่อเพิ่มจำนวนสินค้าในสต๊อก
                   </Typography>
                 </Box>
               </Stack>
@@ -1103,7 +1102,9 @@ export default function Products() {
                     label="ราคาขาย"
                     type="number"
                     value={form.price}
-                    onChange={(e) => updateForm("price", Number(e.target.value))}
+                    onChange={(e) =>
+                      updateForm("price", Number(e.target.value))
+                    }
                     fullWidth
                     required
                     helperText={
@@ -1146,7 +1147,9 @@ export default function Products() {
                     label="จำนวนเริ่มต้นในสต๊อก"
                     type="number"
                     value={form.stockQty}
-                    onChange={(e) => updateForm("stockQty", Number(e.target.value))}
+                    onChange={(e) =>
+                      updateForm("stockQty", Number(e.target.value))
+                    }
                     fullWidth
                     required
                     helperText="เพิ่มสินค้าใหม่ครั้งแรกใส่จำนวนเริ่มต้นได้"
@@ -1166,7 +1169,9 @@ export default function Products() {
                     label="สต๊อกขั้นต่ำ"
                     type="number"
                     value={form.minStock}
-                    onChange={(e) => updateForm("minStock", Number(e.target.value))}
+                    onChange={(e) =>
+                      updateForm("minStock", Number(e.target.value))
+                    }
                     fullWidth
                     helperText="ถ้าต่ำกว่าหรือเท่าจะแจ้งว่าใกล้หมด"
                     sx={{ "& .MuiOutlinedInput-root": { borderRadius: 4 } }}
@@ -1302,7 +1307,11 @@ export default function Products() {
               boxShadow: "none",
             }}
           >
-            {saving ? "กำลังบันทึก..." : form.id === 0 ? "บันทึกสินค้า" : "บันทึกการแก้ไข"}
+            {saving
+              ? "กำลังบันทึก..."
+              : form.id === 0
+              ? "บันทึกสินค้า"
+              : "บันทึกการแก้ไข"}
           </Button>
         </DialogActions>
       </Dialog>

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   Box,
   Typography,
@@ -113,6 +113,8 @@ function SlideDownTransition(props: SlideProps) {
 
 export default function Settings() {
   const [settings, setSettings] = useState<PosSettings>(defaultSettings);
+  const [headerHeight, setHeaderHeight] = useState(0);
+  const headerRef = useRef<HTMLDivElement | null>(null);
 
   const [snackbar, setSnackbar] = useState<{
     open: boolean;
@@ -152,6 +154,32 @@ export default function Settings() {
     }
   }, []);
 
+  useEffect(() => {
+    const updateHeaderHeight = () => {
+      if (headerRef.current) {
+        setHeaderHeight(headerRef.current.offsetHeight);
+      }
+    };
+
+    updateHeaderHeight();
+
+    window.addEventListener("resize", updateHeaderHeight);
+
+    const resizeObserver =
+      typeof ResizeObserver !== "undefined"
+        ? new ResizeObserver(() => updateHeaderHeight())
+        : null;
+
+    if (headerRef.current && resizeObserver) {
+      resizeObserver.observe(headerRef.current);
+    }
+
+    return () => {
+      window.removeEventListener("resize", updateHeaderHeight);
+      resizeObserver?.disconnect();
+    };
+  }, []);
+
   const saveSettings = () => {
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(settings));
@@ -163,7 +191,9 @@ export default function Settings() {
   };
 
   const resetSettings = () => {
-    const confirmed = window.confirm("ต้องการรีเซ็ตการตั้งค่ากลับค่าเริ่มต้นหรือไม่?");
+    const confirmed = window.confirm(
+      "ต้องการรีเซ็ตการตั้งค่ากลับค่าเริ่มต้นหรือไม่?"
+    );
     if (!confirmed) return;
 
     try {
@@ -183,14 +213,22 @@ export default function Settings() {
       }}
     >
       <Box
+        ref={headerRef}
         sx={{
-          mb: 3,
+          position: "fixed",
+          top: 16,
+          left: {
+            md: 136,
+          },
+          right: {
+            md: 396,
+          },
+          zIndex: 1200,
           p: { xs: 2.25, md: 3 },
-          borderRadius: 5,
+          borderRadius: "25px",
           background:
             "linear-gradient(135deg, #111827 0%, #1f2937 55%, #374151 100%)",
           color: "#fff",
-          boxShadow: "0 18px 34px rgba(15, 23, 42, 0.14)",
         }}
       >
         <Stack direction="row" spacing={1.5} alignItems="center">
@@ -211,11 +249,18 @@ export default function Settings() {
               ตั้งค่าระบบ
             </Typography>
             <Typography variant="body2" sx={{ opacity: 0.82 }}>
-              ตั้งค่าการพิมพ์ การชำระเงิน และตัวเลือกการใช้งานสำหรับเครื่องขายหน้าร้าน
+              ตั้งค่าการพิมพ์ การชำระเงิน
+              และตัวเลือกการใช้งานสำหรับเครื่องขายหน้าร้าน
             </Typography>
           </Box>
         </Stack>
       </Box>
+
+      <Box
+        sx={{
+          height: `${headerHeight + 16}px`,
+        }}
+      />
 
       <Box
         display="grid"
@@ -228,7 +273,6 @@ export default function Settings() {
             sx={{
               borderRadius: 5,
               border: "1px solid #e5e7eb",
-              boxShadow: "0 10px 28px rgba(15, 23, 42, 0.06)",
             }}
           >
             <CardContent sx={{ p: 0 }}>
@@ -318,7 +362,6 @@ export default function Settings() {
             sx={{
               borderRadius: 5,
               border: "1px solid #e5e7eb",
-              boxShadow: "0 10px 28px rgba(15, 23, 42, 0.06)",
             }}
           >
             <CardContent sx={{ p: 0 }}>
@@ -411,7 +454,6 @@ export default function Settings() {
             sx={{
               borderRadius: 5,
               border: "1px solid #e5e7eb",
-              boxShadow: "0 10px 28px rgba(15, 23, 42, 0.06)",
             }}
           >
             <CardContent sx={{ p: 0 }}>
@@ -494,7 +536,6 @@ export default function Settings() {
             sx={{
               borderRadius: 5,
               border: "1px solid #e5e7eb",
-              boxShadow: "0 10px 28px rgba(15, 23, 42, 0.06)",
             }}
           >
             <CardContent sx={{ p: 0 }}>
@@ -563,7 +604,6 @@ export default function Settings() {
             sx={{
               borderRadius: 5,
               border: "1px solid #e5e7eb",
-              boxShadow: "0 10px 28px rgba(15, 23, 42, 0.06)",
             }}
           >
             <CardContent sx={{ p: 3 }}>
@@ -572,7 +612,8 @@ export default function Settings() {
               </Typography>
 
               <Typography variant="body2" color="text.secondary" mb={2}>
-                การตั้งค่าหน้านี้จะถูกบันทึกไว้ในเครื่องนี้ เหมาะสำหรับใช้งานแบบออฟไลน์บนโปรแกรมเดสก์ท็อป
+                การตั้งค่าหน้านี้จะถูกบันทึกไว้ในเครื่องนี้
+                เหมาะสำหรับใช้งานแบบออฟไลน์บนโปรแกรมเดสก์ท็อป
               </Typography>
 
               <Stack direction={{ xs: "column", sm: "row" }} spacing={1.2}>
@@ -625,6 +666,8 @@ export default function Settings() {
           </Card>
         </Stack>
       </Box>
+
+      <Box sx={{ height: { md: 16 } }} />
 
       <Snackbar
         open={snackbar.open}

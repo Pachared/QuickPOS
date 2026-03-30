@@ -2,8 +2,6 @@ import { useMemo, useState } from "react";
 import {
   Box,
   Typography,
-  Card,
-  CardContent,
   Table,
   TableHead,
   TableRow,
@@ -13,12 +11,12 @@ import {
   Stack,
   Avatar,
   Chip,
-  Divider,
   Paper,
   Dialog,
   DialogTitle,
   DialogContent,
   DialogActions,
+  Fade,
 } from "@mui/material";
 
 import ReceiptLongRoundedIcon from "@mui/icons-material/ReceiptLongRounded";
@@ -52,6 +50,9 @@ export default function Orders({ orders }: OrdersProps) {
 
   const handleCloseDetail = () => {
     setOpenDetail(false);
+  };
+
+  const handleDetailExited = () => {
     setSelectedOrder(null);
   };
 
@@ -76,8 +77,12 @@ export default function Orders({ orders }: OrdersProps) {
           <tr>
             <td style="padding:4px 0;">${escapeHtml(item.name)}</td>
             <td style="padding:4px 0; text-align:right;">${item.qty}</td>
-            <td style="padding:4px 0; text-align:right;">${formatCurrency(item.price)}</td>
-            <td style="padding:4px 0; text-align:right;">${formatCurrency(subtotal)}</td>
+            <td style="padding:4px 0; text-align:right;">${formatCurrency(
+              item.price
+            )}</td>
+            <td style="padding:4px 0; text-align:right;">${formatCurrency(
+              subtotal
+            )}</td>
           </tr>
         `;
       })
@@ -128,11 +133,21 @@ export default function Orders({ orders }: OrdersProps) {
 
           <div class="divider"></div>
 
-          <div class="row"><span>จำนวนสินค้า</span><span>${selectedOrder.items} ชิ้น</span></div>
-          <div class="row"><span>วิธีชำระ</span><span>${selectedOrder.paymentMethod === "cash" ? "เงินสด" : "โอนเงิน"}</span></div>
-          <div class="row"><span>รับเงิน</span><span>${formatCurrency(selectedOrder.receivedAmount)}</span></div>
-          <div class="row"><span>เงินทอน</span><span>${formatCurrency(selectedOrder.change)}</span></div>
-          <div class="row total"><span>ยอดรวม</span><span>${formatCurrency(selectedOrder.total)}</span></div>
+          <div class="row"><span>จำนวนสินค้า</span><span>${
+            selectedOrder.items
+          } ชิ้น</span></div>
+          <div class="row"><span>วิธีชำระ</span><span>${
+            selectedOrder.paymentMethod === "cash" ? "เงินสด" : "โอนเงิน"
+          }</span></div>
+          <div class="row"><span>รับเงิน</span><span>${formatCurrency(
+            selectedOrder.receivedAmount
+          )}</span></div>
+          <div class="row"><span>เงินทอน</span><span>${formatCurrency(
+            selectedOrder.change
+          )}</span></div>
+          <div class="row total"><span>ยอดรวม</span><span>${formatCurrency(
+            selectedOrder.total
+          )}</span></div>
 
           <div class="divider"></div>
           <div class="center muted">ขอบคุณที่ใช้บริการ</div>
@@ -154,18 +169,22 @@ export default function Orders({ orders }: OrdersProps) {
   return (
     <Box
       sx={{
-        minHeight: "100%",
+        height: "100%",
+        minHeight: 0,
+        display: "flex",
+        flexDirection: "column",
+        overflow: "hidden",
       }}
     >
       <Box
         sx={{
-          mb: 3,
+          mb: 2,
           p: { xs: 2.25, md: 3 },
-          borderRadius: 5,
+          borderRadius: "25px",
           background:
-            "linear-gradient(135deg, #111827 0%, #1f2937 55%, #374151 100%)",
+            "linear-gradient(135deg, #0f172a 0%, #18253c 45%, #344256 100%)",
           color: "#fff",
-          boxShadow: "0 18px 34px rgba(15, 23, 42, 0.14)",
+          flexShrink: 0,
         }}
       >
         <Stack
@@ -205,6 +224,9 @@ export default function Orders({ orders }: OrdersProps) {
               color: "#fff",
               bgcolor: "rgba(255,255,255,0.12)",
               border: "1px solid rgba(255,255,255,0.14)",
+              "& .MuiChip-label": {
+                px: 0.5,
+              },
             }}
           />
         </Stack>
@@ -218,7 +240,7 @@ export default function Orders({ orders }: OrdersProps) {
           lg: "repeat(3, 1fr)",
         }}
         gap={2}
-        sx={{ mb: 3 }}
+        sx={{ mb: 2, flexShrink: 0 }}
       >
         <Paper elevation={0} sx={summaryCardSx}>
           <Stack direction="row" spacing={1.5} alignItems="center">
@@ -293,21 +315,26 @@ export default function Orders({ orders }: OrdersProps) {
         </Paper>
       </Box>
 
-      <Card
+      <Paper
         elevation={0}
         sx={{
+          display: "flex",
+          flexDirection: "column",
+          overflow: "hidden",
           borderRadius: 5,
           border: "1px solid #e5e7eb",
-          boxShadow: "0 10px 28px rgba(15, 23, 42, 0.06)",
-          overflow: "hidden",
           background: "#fff",
+          minHeight: 0,
+          flex: 1,
         }}
       >
         <Box
           sx={{
-            px: 2.5,
+            px: { xs: 2, md: 2.5 },
             py: 2,
             background: "linear-gradient(180deg, #ffffff 0%, #fafafa 100%)",
+            borderBottom: "1px solid #eef2f7",
+            flexShrink: 0,
           }}
         >
           <Typography fontSize={18} fontWeight={800} color="#111827">
@@ -318,173 +345,248 @@ export default function Orders({ orders }: OrdersProps) {
           </Typography>
         </Box>
 
-        <Divider />
+        <Box
+          sx={{
+            flex: 1,
+            minHeight: 0,
+            overflow: "auto",
+            backgroundColor: "#fff",
+            transform: "translateZ(0)",
+            backfaceVisibility: "hidden",
+            WebkitOverflowScrolling: "touch",
+          }}
+        >
+          <Table
+            stickyHeader
+            size="small"
+            sx={{
+              width: "100%",
+              tableLayout: "auto",
+              borderCollapse: "separate",
+              borderSpacing: 0,
+              "& .MuiTableCell-root": {
+                overflow: "hidden",
+                textOverflow: "ellipsis",
+                whiteSpace: "nowrap",
+              },
+              "& .MuiTableHead-root .MuiTableCell-root": {
+                backgroundColor: "#f9fafb",
+                backgroundImage: "none",
+                position: "sticky",
+                top: 0,
+                zIndex: 2,
+                boxShadow: "inset 0 -1px 0 #e5e7eb",
+                backfaceVisibility: "hidden",
+                transform: "translateZ(0)",
+              },
+            }}
+          >
+            <TableHead>
+              <TableRow
+                sx={{
+                  "& .MuiTableCell-root": {
+                    borderBottom: "none",
+                    fontWeight: 800,
+                    color: "#374151",
+                    py: 1.5,
+                  },
+                }}
+              >
+                <TableCell sx={{ width: "20%" }}>เลขออเดอร์</TableCell>
+                <TableCell sx={{ width: "24%" }}>วันที่ / เวลา</TableCell>
+                <TableCell sx={{ width: "14%" }}>จำนวนสินค้า</TableCell>
+                <TableCell sx={{ width: "14%" }}>ยอดรวม</TableCell>
+                <TableCell sx={{ width: "16%" }}>การชำระเงิน</TableCell>
+                <TableCell sx={{ width: "12%" }}>การจัดการ</TableCell>
+              </TableRow>
+            </TableHead>
 
-        <CardContent sx={{ p: 0 }}>
-          <Box sx={{ overflowX: "auto" }}>
-            <Table>
-              <TableHead>
+            <TableBody>
+              {orders.map((order) => (
                 <TableRow
+                  key={order.id}
+                  hover
                   sx={{
-                    background: "#f9fafb",
+                    transition: "background-color 0.18s ease",
+                    "&:hover": {
+                      background: "#fcfcfd",
+                    },
                     "& .MuiTableCell-root": {
-                      borderBottom: "1px solid #e5e7eb",
-                      fontWeight: 800,
-                      color: "#374151",
-                      py: 1.8,
+                      borderBottom: "1px solid #f1f5f9",
+                      py: 1.35,
                     },
                   }}
                 >
-                  <TableCell>เลขออเดอร์</TableCell>
-                  <TableCell>วันที่ / เวลา</TableCell>
-                  <TableCell>จำนวนสินค้า</TableCell>
-                  <TableCell>ยอดรวม</TableCell>
-                  <TableCell>การชำระเงิน</TableCell>
-                  <TableCell align="right">การจัดการ</TableCell>
-                </TableRow>
-              </TableHead>
+                  <TableCell>
+                    <Chip
+                      label={`#${order.id}`}
+                      sx={{
+                        maxWidth: "100%",
+                        borderRadius: 999,
+                        fontWeight: 800,
+                        bgcolor: "#f3f4f6",
+                        color: "#111827",
+                        border: "1px solid #e5e7eb",
+                        "& .MuiChip-label": {
+                          px: 1.25,
+                          overflow: "hidden",
+                          textOverflow: "ellipsis",
+                        },
+                      }}
+                    />
+                  </TableCell>
 
-              <TableBody>
-                {orders.map((order) => (
-                  <TableRow
-                    key={order.id}
-                    hover
-                    sx={{
-                      transition: "all 0.2s ease",
-                      "&:hover": {
-                        background: "#fcfcfd",
-                      },
-                      "& .MuiTableCell-root": {
-                        borderBottom: "1px solid #f1f5f9",
-                        py: 1.8,
-                      },
-                    }}
-                  >
-                    <TableCell>
-                      <Chip
-                        label={`#${order.id}`}
-                        sx={{
-                          borderRadius: 999,
-                          fontWeight: 800,
-                          bgcolor: "#f3f4f6",
-                          color: "#111827",
-                          border: "1px solid #e5e7eb",
-                        }}
-                      />
-                    </TableCell>
+                  <TableCell>
+                    <Typography fontWeight={700} color="#111827" noWrap>
+                      {order.date}
+                    </Typography>
+                  </TableCell>
 
-                    <TableCell>
-                      <Typography fontWeight={700} color="#111827">
-                        {order.date}
-                      </Typography>
-                    </TableCell>
+                  <TableCell>
+                    <Typography fontWeight={700} color="#111827" noWrap>
+                      {order.items} ชิ้น
+                    </Typography>
+                  </TableCell>
 
-                    <TableCell>
-                      <Typography fontWeight={700} color="#111827">
-                        {order.items} ชิ้น
-                      </Typography>
-                    </TableCell>
+                  <TableCell>
+                    <Typography fontWeight={800} color="#111827" noWrap>
+                      {formatCurrency(order.total)}
+                    </Typography>
+                  </TableCell>
 
-                    <TableCell>
-                      <Typography fontWeight={800} color="#111827">
-                        {formatCurrency(order.total)}
-                      </Typography>
-                    </TableCell>
-
-                    <TableCell>
-                      <Chip
-                        icon={
-                          order.paymentMethod === "cash" ? (
-                            <PaymentsRoundedIcon />
-                          ) : (
-                            <AccountBalanceRoundedIcon />
-                          )
-                        }
-                        label={
+                  <TableCell>
+                    <Chip
+                      icon={
+                        order.paymentMethod === "cash" ? (
+                          <PaymentsRoundedIcon sx={{ fontSize: 18 }} />
+                        ) : (
+                          <AccountBalanceRoundedIcon sx={{ fontSize: 18 }} />
+                        )
+                      }
+                      label={
+                        order.paymentMethod === "cash" ? "เงินสด" : "โอนเงิน"
+                      }
+                      sx={{
+                        maxWidth: "100%",
+                        height: 32,
+                        borderRadius: 999,
+                        fontWeight: 800,
+                        border:
                           order.paymentMethod === "cash"
-                            ? "เงินสด"
-                            : "โอนเงิน"
-                        }
-                        sx={{
-                          borderRadius: 999,
-                          fontWeight: 700,
-                          bgcolor:
+                            ? "1px solid #f3d38a"
+                            : "1px solid #bfd4f6",
+                        bgcolor:
+                          order.paymentMethod === "cash"
+                            ? "#fff7db"
+                            : "#eaf2ff",
+                        color:
+                          order.paymentMethod === "cash"
+                            ? "#8a5a00"
+                            : "#1d4f91",
+                        "& .MuiChip-label": {
+                          px: 1.4,
+                          overflow: "hidden",
+                          textOverflow: "ellipsis",
+                        },
+                        "& .MuiChip-icon": {
+                          ml: 0.9,
+                          mr: -0.4,
+                          color:
                             order.paymentMethod === "cash"
-                              ? "#fef3c7"
-                              : "#dbeafe",
-                          color: "#111827",
-                        }}
-                      />
-                    </TableCell>
+                              ? "#9a6700"
+                              : "#2563eb",
+                        },
+                      }}
+                    />
+                  </TableCell>
 
-                    <TableCell align="right">
-                      <Button
-                        size="small"
-                        variant="outlined"
-                        startIcon={<VisibilityRoundedIcon />}
-                        onClick={() => handleOpenDetail(order)}
+                  <TableCell align="right">
+                    <Button
+                      size="small"
+                      variant="outlined"
+                      startIcon={<VisibilityRoundedIcon />}
+                      onClick={() => handleOpenDetail(order)}
+                      sx={{
+                        minWidth: "auto",
+                        borderRadius: 3,
+                        px: 1.25,
+                        py: 0.75,
+                        fontWeight: 700,
+                        textTransform: "none",
+                        borderColor: "#d1d5db",
+                        color: "#111827",
+                        whiteSpace: "nowrap",
+                        "&:hover": {
+                          borderColor: "#9ca3af",
+                          background: "#f9fafb",
+                        },
+                      }}
+                    >
+                      ดูรายละเอียด
+                    </Button>
+                  </TableCell>
+                </TableRow>
+              ))}
+
+              {orders.length === 0 && (
+                <TableRow>
+                  <TableCell colSpan={6} align="center" sx={{ py: 8 }}>
+                    <Stack spacing={1.5} alignItems="center">
+                      <Avatar
                         sx={{
-                          borderRadius: 3,
-                          px: 1.8,
-                          py: 0.8,
-                          fontWeight: 700,
-                          textTransform: "none",
-                          borderColor: "#d1d5db",
-                          color: "#111827",
+                          width: 72,
+                          height: 72,
+                          borderRadius: 4,
+                          bgcolor: "#f3f4f6",
+                          color: "#9ca3af",
                         }}
                       >
-                        ดูรายละเอียด
-                      </Button>
-                    </TableCell>
-                  </TableRow>
-                ))}
+                        <ReceiptLongRoundedIcon sx={{ fontSize: 34 }} />
+                      </Avatar>
 
-                {orders.length === 0 && (
-                  <TableRow>
-                    <TableCell colSpan={6} align="center" sx={{ py: 8 }}>
-                      <Stack spacing={1.5} alignItems="center">
-                        <Avatar
-                          sx={{
-                            width: 72,
-                            height: 72,
-                            borderRadius: 4,
-                            bgcolor: "#f3f4f6",
-                            color: "#9ca3af",
-                          }}
-                        >
-                          <ReceiptLongRoundedIcon sx={{ fontSize: 34 }} />
-                        </Avatar>
+                      <Typography variant="h6" fontWeight={800} color="#111827">
+                        ยังไม่มีประวัติการขาย
+                      </Typography>
 
-                        <Typography
-                          variant="h6"
-                          fontWeight={800}
-                          color="#111827"
-                        >
-                          ยังไม่มีประวัติการขาย
-                        </Typography>
-
-                        <Typography variant="body2" color="text.secondary">
-                          เมื่อกดชำระเงินสำเร็จ รายการจะมาแสดงที่หน้านี้อัตโนมัติ
-                        </Typography>
-                      </Stack>
-                    </TableCell>
-                  </TableRow>
-                )}
-              </TableBody>
-            </Table>
-          </Box>
-        </CardContent>
-      </Card>
+                      <Typography variant="body2" color="text.secondary">
+                        เมื่อกดชำระเงินสำเร็จ รายการจะมาแสดงที่หน้านี้อัตโนมัติ
+                      </Typography>
+                    </Stack>
+                  </TableCell>
+                </TableRow>
+              )}
+            </TableBody>
+          </Table>
+        </Box>
+      </Paper>
 
       <Dialog
         open={openDetail}
         onClose={handleCloseDetail}
         fullWidth
         maxWidth="md"
+        keepMounted
+        closeAfterTransition
+        TransitionComponent={Fade}
+        TransitionProps={{
+          timeout: {
+            enter: 180,
+            exit: 160,
+          },
+          onExited: handleDetailExited,
+        }}
         PaperProps={{
           sx: {
             borderRadius: 6,
             overflow: "hidden",
+            boxShadow: "0 30px 80px rgba(15, 23, 42, 0.22)",
+          },
+        }}
+        BackdropProps={{
+          timeout: 160,
+          sx: {
+            backgroundColor: "rgba(15, 23, 42, 0.42)",
+            backdropFilter: "blur(4px)",
           },
         }}
       >
@@ -555,7 +657,12 @@ export default function Orders({ orders }: OrdersProps) {
                 </Box>
 
                 <Box sx={{ overflowX: "auto" }}>
-                  <Table>
+                  <Table
+                    sx={{
+                      borderCollapse: "separate",
+                      borderSpacing: 0,
+                    }}
+                  >
                     <TableHead>
                       <TableRow
                         sx={{
@@ -563,6 +670,7 @@ export default function Orders({ orders }: OrdersProps) {
                             fontWeight: 800,
                             color: "#374151",
                             background: "#fcfcfd",
+                            borderBottom: "1px solid #e5e7eb",
                           },
                         }}
                       >
@@ -617,11 +725,49 @@ export default function Orders({ orders }: OrdersProps) {
                   <Stack spacing={1.2}>
                     <Stack direction="row" justifyContent="space-between">
                       <Typography color="text.secondary">วิธีชำระ</Typography>
-                      <Typography fontWeight={700}>
-                        {selectedOrder.paymentMethod === "cash"
-                          ? "เงินสด"
-                          : "โอนเงิน"}
-                      </Typography>
+                      <Chip
+                        size="small"
+                        icon={
+                          selectedOrder.paymentMethod === "cash" ? (
+                            <PaymentsRoundedIcon sx={{ fontSize: 16 }} />
+                          ) : (
+                            <AccountBalanceRoundedIcon sx={{ fontSize: 16 }} />
+                          )
+                        }
+                        label={
+                          selectedOrder.paymentMethod === "cash"
+                            ? "เงินสด"
+                            : "โอนเงิน"
+                        }
+                        sx={{
+                          height: 28,
+                          borderRadius: 999,
+                          fontWeight: 800,
+                          border:
+                            selectedOrder.paymentMethod === "cash"
+                              ? "1px solid #f3d38a"
+                              : "1px solid #bfd4f6",
+                          bgcolor:
+                            selectedOrder.paymentMethod === "cash"
+                              ? "#fff7db"
+                              : "#eaf2ff",
+                          color:
+                            selectedOrder.paymentMethod === "cash"
+                              ? "#8a5a00"
+                              : "#1d4f91",
+                          "& .MuiChip-label": {
+                            px: 1.2,
+                          },
+                          "& .MuiChip-icon": {
+                            ml: 0.8,
+                            mr: -0.3,
+                            color:
+                              selectedOrder.paymentMethod === "cash"
+                                ? "#9a6700"
+                                : "#2563eb",
+                          },
+                        }}
+                      />
                     </Stack>
 
                     <Stack direction="row" justifyContent="space-between">

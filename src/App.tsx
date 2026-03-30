@@ -1,5 +1,5 @@
 import { Box } from "@mui/material";
-import { Routes, Route } from "react-router-dom";
+import { Routes, Route, useLocation } from "react-router-dom";
 import { useEffect, useState } from "react";
 
 import Sidebar from "./components/Sidebar";
@@ -18,6 +18,9 @@ const ORDERS_STORAGE_KEY = "quickpos_orders";
 export default function App() {
   const [cart, setCart] = useState<CartItem[]>([]);
   const [orders, setOrders] = useState<Order[]>([]);
+  const location = useLocation();
+
+  const isProductsPage = location.pathname === "/products";
 
   useEffect(() => {
     try {
@@ -69,7 +72,9 @@ export default function App() {
       sx={{
         display: "flex",
         minHeight: "100vh",
+        height: "100dvh",
         background: "linear-gradient(180deg, #f3f4f6 0%, #e5e7eb 100%)",
+        overflow: isProductsPage ? "hidden" : "auto",
       }}
     >
       <Sidebar />
@@ -80,6 +85,12 @@ export default function App() {
           ml: "20px",
           mr: "380px",
           p: 2,
+          minWidth: 0,
+          minHeight: 0,
+          height: isProductsPage ? "100dvh" : "auto",
+          overflow: isProductsPage ? "hidden" : "auto",
+          display: "flex",
+          flexDirection: "column",
         }}
       >
         <Routes>

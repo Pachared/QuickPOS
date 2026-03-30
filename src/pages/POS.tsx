@@ -254,17 +254,22 @@ export default function POS({ cart, setCart }: Props) {
     <Box
       sx={{
         minHeight: "100%",
+        px: { xs: 0, md: 0 },
+        pt: 0,
+        pb: { xs: 4, md: 6 },
       }}
     >
       <Box
         sx={{
-          mb: 3,
+          mb: 2,
           p: { xs: 2.25, md: 3 },
-          borderRadius: 5,
+          borderRadius: "25px",
           background:
-            "linear-gradient(135deg, #111827 0%, #1f2937 55%, #374151 100%)",
+            "linear-gradient(135deg, #0f172a 0%, #18253c 45%, #344256 100%)",
           color: "#fff",
-          boxShadow: "0 18px 34px rgba(15, 23, 42, 0.14)",
+          position: "sticky",
+          top: 0,
+          zIndex: 10,
         }}
       >
         <Stack direction="row" spacing={1.5} alignItems="center">
@@ -294,12 +299,11 @@ export default function POS({ cart, setCart }: Props) {
       <Paper
         elevation={0}
         sx={{
-          mb: 3,
+          mb: 2,
           p: 2,
           borderRadius: 5,
           border: "1px solid #e5e7eb",
           background: "#fff",
-          boxShadow: "0 8px 24px rgba(15, 23, 42, 0.05)",
         }}
       >
         <Stack
@@ -342,7 +346,6 @@ export default function POS({ cart, setCart }: Props) {
                 </InputAdornment>
               ),
             }}
-            helperText="ยิงเสร็จแล้วระบบจะเพิ่มสินค้าเข้าตะกร้าให้อัตโนมัติ"
           />
 
           <Button
@@ -374,12 +377,11 @@ export default function POS({ cart, setCart }: Props) {
       <Paper
         elevation={0}
         sx={{
-          mb: 3,
+          mb: 2,
           p: 2,
           borderRadius: 5,
           border: "1px solid #e5e7eb",
           background: "#fff",
-          boxShadow: "0 8px 24px rgba(15, 23, 42, 0.05)",
         }}
       >
         <Typography variant="subtitle1" fontWeight={800} mb={1.5}>
@@ -541,6 +543,8 @@ export default function POS({ cart, setCart }: Props) {
           </Card>
         ))}
       </Box>
+
+      <Box sx={{ height: { md: 16 } }} />
 
       <Snackbar
         open={snackbar.open}
