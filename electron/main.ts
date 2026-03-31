@@ -1,6 +1,7 @@
 import { app, BrowserWindow } from "electron";
 import path from "path";
 import { registerProductIpc } from "./ipc/products";
+import { registerOrderIpc } from "./ipc/orders";
 import "./database/sqlite";
 
 let mainWindow: BrowserWindow | null = null;
@@ -20,15 +21,16 @@ function createWindow() {
   });
 
   if (isDev) {
-    mainWindow.loadURL(DEV_SERVER_URL);
+    void mainWindow.loadURL(DEV_SERVER_URL);
     mainWindow.webContents.openDevTools();
   } else {
-    mainWindow.loadFile(path.join(__dirname, "../dist/index.html"));
+    void mainWindow.loadFile(path.join(__dirname, "../dist/index.html"));
   }
 }
 
 app.whenReady().then(() => {
   registerProductIpc();
+  registerOrderIpc();
   createWindow();
 
   app.on("activate", () => {

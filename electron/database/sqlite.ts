@@ -4,6 +4,7 @@ import fs from "fs";
 import path from "path";
 
 export type ProductStatus = "active" | "inactive";
+export type PaymentMethod = "cash" | "transfer";
 
 export interface ProductRow {
   id: number;
@@ -24,13 +25,64 @@ export interface ProductRow {
   updatedAt: string;
 }
 
+export interface OrderItemRow {
+  id: number | string;
+  name: string;
+  qty: number;
+  price: number;
+}
+
+export interface OrderRow {
+  id: number;
+  date: string;
+  items: number;
+  total: number;
+  paymentMethod: PaymentMethod;
+  receivedAmount: number;
+  change: number;
+  products: OrderItemRow[];
+  createdAt: string;
+}
+
+export interface OrderInput {
+  total: number;
+  items: number;
+  paymentMethod: PaymentMethod;
+  receivedAmount: number;
+  change: number;
+  date: string;
+  products: Array<{
+    id: number;
+    name: string;
+    qty: number;
+    price: number;
+  }>;
+}
+
+export interface ProductInput {
+  barcode: string;
+  sku: string;
+  name: string;
+  category: string;
+  unit: string;
+  price: number;
+  cost: number;
+  stockQty: number;
+  minStock: number;
+  supplier: string;
+  location: string;
+  description: string;
+  status: ProductStatus;
+}
+
 let dbInstance: Database.Database | null = null;
 
 function ensureDb() {
   if (dbInstance) return dbInstance;
 
-  const userDataPath = app.getPath("userData");
-  const dataDir = path.join(userDataPath, "data");
+  const appPath = app.getAppPath();
+  const rootPath = app.isPackaged ? path.dirname(appPath) : appPath;
+  const dataDir = path.join(rootPath, "data");
 
   if (!fs.existsSync(dataDir)) {
     fs.mkdirSync(dataDir, { recursive: true });
@@ -64,7 +116,12 @@ function ensureDb() {
 
     CREATE TABLE IF NOT EXISTS orders (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
+      order_date TEXT NOT NULL,
+      items INTEGER NOT NULL DEFAULT 0,
       total REAL NOT NULL DEFAULT 0,
+      payment_method TEXT NOT NULL DEFAULT 'cash',
+      received_amount REAL NOT NULL DEFAULT 0,
+      change_amount REAL NOT NULL DEFAULT 0,
       created_at TEXT NOT NULL
     );
 
@@ -72,14 +129,16 @@ function ensureDb() {
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       order_id INTEGER NOT NULL,
       product_id INTEGER NOT NULL,
+      product_name TEXT NOT NULL DEFAULT '',
       quantity INTEGER NOT NULL DEFAULT 1,
       price REAL NOT NULL DEFAULT 0,
       FOREIGN KEY (order_id) REFERENCES orders(id) ON DELETE CASCADE,
-      FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE
+      FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE RESTRICT
     );
 
     CREATE INDEX IF NOT EXISTS idx_products_barcode ON products(barcode);
     CREATE INDEX IF NOT EXISTS idx_products_sku ON products(sku);
+    CREATE INDEX IF NOT EXISTS idx_orders_order_date ON orders(order_date);
     CREATE INDEX IF NOT EXISTS idx_order_items_order_id ON order_items(order_id);
     CREATE INDEX IF NOT EXISTS idx_order_items_product_id ON order_items(product_id);
   `);
@@ -94,22 +153,40 @@ export function getDb() {
 
 function mapProduct(row: any): ProductRow {
   return {
-    id: row.id,
-    barcode: row.barcode,
-    sku: row.sku,
-    name: row.name,
-    category: row.category,
-    unit: row.unit,
+    id: Number(row.id),
+    barcode: String(row.barcode),
+    sku: String(row.sku),
+    name: String(row.name),
+    category: String(row.category),
+    unit: String(row.unit),
     price: Number(row.price),
     cost: Number(row.cost),
     stockQty: Number(row.stock_qty),
     minStock: Number(row.min_stock),
-    supplier: row.supplier,
-    location: row.location,
-    description: row.description,
-    status: row.status,
-    createdAt: row.created_at,
-    updatedAt: row.updated_at,
+    supplier: String(row.supplier),
+    location: String(row.location),
+    description: String(row.description),
+    status: row.status === "inactive" ? "inactive" : "active",
+    createdAt: String(row.created_at),
+    updatedAt: String(row.updated_at),
+  };
+}
+
+function normalizeProductInput(input: ProductInput): ProductInput {
+  return {
+    barcode: String(input.barcode || "").trim(),
+    sku: String(input.sku || "").trim(),
+    name: String(input.name || "").trim(),
+    category: String(input.category || "").trim(),
+    unit: String(input.unit || "").trim() || "ชิ้น",
+    price: Number(input.price || 0),
+    cost: Number(input.cost || 0),
+    stockQty: Number(input.stockQty || 0),
+    minStock: Number(input.minStock || 0),
+    supplier: String(input.supplier || "").trim(),
+    location: String(input.location || "").trim(),
+    description: String(input.description || "").trim(),
+    status: input.status === "inactive" ? "inactive" : "active",
   };
 }
 
@@ -139,43 +216,9 @@ export function getProductByBarcode(barcode: string): ProductRow | null {
       LIMIT 1
       `
     )
-    .get(barcode.trim());
+    .get(String(barcode || "").trim());
 
   return row ? mapProduct(row) : null;
-}
-
-export interface ProductInput {
-  barcode: string;
-  sku: string;
-  name: string;
-  category: string;
-  unit: string;
-  price: number;
-  cost: number;
-  stockQty: number;
-  minStock: number;
-  supplier: string;
-  location: string;
-  description: string;
-  status: ProductStatus;
-}
-
-function normalizeProductInput(input: ProductInput) {
-  return {
-    barcode: input.barcode.trim(),
-    sku: input.sku.trim(),
-    name: input.name.trim(),
-    category: input.category.trim(),
-    unit: input.unit.trim() || "ชิ้น",
-    price: Number(input.price || 0),
-    cost: Number(input.cost || 0),
-    stockQty: Number(input.stockQty || 0),
-    minStock: Number(input.minStock || 0),
-    supplier: input.supplier.trim(),
-    location: input.location.trim(),
-    description: input.description.trim(),
-    status: input.status === "inactive" ? "inactive" : "active",
-  } satisfies ProductInput;
 }
 
 export function createProduct(input: ProductInput): ProductRow {
@@ -239,7 +282,7 @@ export function updateProduct(id: number, input: ProductInput): ProductRow {
       `
     )
     .run({
-      id,
+      id: Number(id),
       ...data,
       updatedAt: now,
     });
@@ -248,13 +291,13 @@ export function updateProduct(id: number, input: ProductInput): ProductRow {
     throw new Error("ไม่พบสินค้าที่ต้องการแก้ไข");
   }
 
-  const row = db.prepare("SELECT * FROM products WHERE id = ?").get(id);
+  const row = db.prepare("SELECT * FROM products WHERE id = ?").get(Number(id));
   return mapProduct(row);
 }
 
 export function deleteProduct(id: number) {
   const db = getDb();
-  const result = db.prepare("DELETE FROM products WHERE id = ?").run(id);
+  const result = db.prepare("DELETE FROM products WHERE id = ?").run(Number(id));
 
   if (result.changes === 0) {
     throw new Error("ไม่พบสินค้าที่ต้องการลบ");
@@ -263,9 +306,12 @@ export function deleteProduct(id: number) {
   return { success: true };
 }
 
-export function increaseStockByBarcode(barcode: string, amount = 1): ProductRow {
+export function increaseStockByBarcode(
+  barcode: string,
+  amount = 1
+): ProductRow {
   const db = getDb();
-  const cleanBarcode = barcode.trim();
+  const cleanBarcode = String(barcode || "").trim();
   const cleanAmount = Number(amount || 1);
 
   if (!cleanBarcode) {
@@ -303,4 +349,248 @@ export function increaseStockByBarcode(barcode: string, amount = 1): ProductRow 
     .get(cleanBarcode);
 
   return mapProduct(row);
+}
+
+export function createOrder(input: OrderInput): OrderRow {
+  const db = getDb();
+
+  if (!Array.isArray(input.products) || input.products.length === 0) {
+    throw new Error("ไม่พบรายการสินค้าในออเดอร์");
+  }
+
+  const tx = db.transaction((payload: OrderInput) => {
+    const now = new Date().toISOString();
+
+    const orderResult = db
+      .prepare(
+        `
+        INSERT INTO orders (
+          order_date,
+          items,
+          total,
+          payment_method,
+          received_amount,
+          change_amount,
+          created_at
+        )
+        VALUES (
+          @date,
+          @items,
+          @total,
+          @paymentMethod,
+          @receivedAmount,
+          @change,
+          @createdAt
+        )
+        `
+      )
+      .run({
+        date: String(payload.date),
+        items: Number(payload.items),
+        total: Number(payload.total),
+        paymentMethod: payload.paymentMethod === "transfer" ? "transfer" : "cash",
+        receivedAmount: Number(payload.receivedAmount),
+        change: Number(payload.change),
+        createdAt: now,
+      });
+
+    const orderId = Number(orderResult.lastInsertRowid);
+
+    const insertItemStmt = db.prepare(
+      `
+      INSERT INTO order_items (
+        order_id,
+        product_id,
+        product_name,
+        quantity,
+        price
+      )
+      VALUES (
+        @orderId,
+        @productId,
+        @productName,
+        @quantity,
+        @price
+      )
+      `
+    );
+
+    const updateStockStmt = db.prepare(
+      `
+      UPDATE products
+      SET
+        stock_qty = stock_qty - @quantity,
+        updated_at = @updatedAt
+      WHERE id = @productId
+        AND stock_qty >= @quantity
+      `
+    );
+
+    for (const item of payload.products) {
+      const product = db
+        .prepare(
+          `
+          SELECT id, name, stock_qty
+          FROM products
+          WHERE id = ?
+          LIMIT 1
+          `
+        )
+        .get(Number(item.id)) as
+        | { id: number; name: string; stock_qty: number }
+        | undefined;
+
+      if (!product) {
+        throw new Error(`ไม่พบสินค้า id ${item.id}`);
+      }
+
+      if (Number(product.stock_qty) < Number(item.qty)) {
+        throw new Error(`สต๊อกสินค้า "${product.name}" ไม่เพียงพอ`);
+      }
+
+      insertItemStmt.run({
+        orderId,
+        productId: Number(item.id),
+        productName: String(item.name || product.name),
+        quantity: Number(item.qty),
+        price: Number(item.price),
+      });
+
+      const stockResult = updateStockStmt.run({
+        productId: Number(item.id),
+        quantity: Number(item.qty),
+        updatedAt: now,
+      });
+
+      if (stockResult.changes === 0) {
+        throw new Error(`ตัดสต๊อกสินค้า "${product.name}" ไม่สำเร็จ`);
+      }
+    }
+
+    return orderId;
+  });
+
+  const orderId = tx(input);
+  const created = getOrderById(orderId);
+
+  if (!created) {
+    throw new Error("บันทึกออเดอร์สำเร็จแต่ไม่สามารถอ่านข้อมูลออเดอร์ได้");
+  }
+
+  return created;
+}
+
+export function getOrderById(id: number): OrderRow | null {
+  const db = getDb();
+
+  const order = db
+    .prepare(
+      `
+      SELECT
+        id,
+        order_date,
+        items,
+        total,
+        payment_method,
+        received_amount,
+        change_amount,
+        created_at
+      FROM orders
+      WHERE id = ?
+      LIMIT 1
+      `
+    )
+    .get(Number(id)) as any;
+
+  if (!order) return null;
+
+  const items = db
+    .prepare(
+      `
+      SELECT
+        product_id,
+        product_name,
+        quantity,
+        price
+      FROM order_items
+      WHERE order_id = ?
+      ORDER BY id ASC
+      `
+    )
+    .all(Number(id)) as any[];
+
+  return {
+    id: Number(order.id),
+    date: String(order.order_date),
+    items: Number(order.items),
+    total: Number(order.total),
+    paymentMethod:
+      order.payment_method === "transfer" ? "transfer" : "cash",
+    receivedAmount: Number(order.received_amount),
+    change: Number(order.change_amount),
+    createdAt: String(order.created_at),
+    products: items.map((item) => ({
+      id: Number(item.product_id),
+      name: String(item.product_name),
+      qty: Number(item.quantity),
+      price: Number(item.price),
+    })),
+  };
+}
+
+export function listOrders(): OrderRow[] {
+  const db = getDb();
+
+  const orders = db
+    .prepare(
+      `
+      SELECT
+        id,
+        order_date,
+        items,
+        total,
+        payment_method,
+        received_amount,
+        change_amount,
+        created_at
+      FROM orders
+      ORDER BY id DESC
+      `
+    )
+    .all() as any[];
+
+  const itemStmt = db.prepare(
+    `
+    SELECT
+      product_id,
+      product_name,
+      quantity,
+      price
+    FROM order_items
+    WHERE order_id = ?
+    ORDER BY id ASC
+    `
+  );
+
+  return orders.map((order) => {
+    const products = itemStmt.all(Number(order.id)) as any[];
+
+    return {
+      id: Number(order.id),
+      date: String(order.order_date),
+      items: Number(order.items),
+      total: Number(order.total),
+      paymentMethod:
+        order.payment_method === "transfer" ? "transfer" : "cash",
+      receivedAmount: Number(order.received_amount),
+      change: Number(order.change_amount),
+      createdAt: String(order.created_at),
+      products: products.map((item) => ({
+        id: Number(item.product_id),
+        name: String(item.product_name),
+        qty: Number(item.quantity),
+        price: Number(item.price),
+      })),
+    } satisfies OrderRow;
+  });
 }

@@ -1,6 +1,6 @@
 import { Box } from "@mui/material";
 import { Routes, Route, useLocation } from "react-router-dom";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 
 import Sidebar from "./components/Sidebar";
 import Cart from "./components/Cart";
@@ -13,7 +13,6 @@ import Settings from "./pages/Settings";
 import type { CartItem, Order } from "./types/pos";
 
 const CART_STORAGE_KEY = "quickpos_cart";
-const ORDERS_STORAGE_KEY = "quickpos_orders";
 
 export default function App() {
   const [cart, setCart] = useState<CartItem[]>([]);
@@ -22,22 +21,30 @@ export default function App() {
 
   const isProductsPage = location.pathname === "/products";
 
+  const loadOrders = useCallback(async () => {
+    try {
+      const rows = await window.pos.listOrders();
+      setOrders(rows);
+    } catch (error) {
+      console.error("โหลด orders จากฐานข้อมูลไม่สำเร็จ:", error);
+    }
+  }, []);
+
   useEffect(() => {
     try {
       const savedCart = localStorage.getItem(CART_STORAGE_KEY);
-      const savedOrders = localStorage.getItem(ORDERS_STORAGE_KEY);
 
       if (savedCart) {
         setCart(JSON.parse(savedCart));
       }
-
-      if (savedOrders) {
-        setOrders(JSON.parse(savedOrders));
-      }
     } catch (error) {
-      console.error("โหลดข้อมูลจาก localStorage ไม่สำเร็จ:", error);
+      console.error("โหลด cart จาก localStorage ไม่สำเร็จ:", error);
     }
   }, []);
+
+  useEffect(() => {
+    void loadOrders();
+  }, [loadOrders]);
 
   useEffect(() => {
     try {
@@ -46,14 +53,6 @@ export default function App() {
       console.error("บันทึก cart ไม่สำเร็จ:", error);
     }
   }, [cart]);
-
-  useEffect(() => {
-    try {
-      localStorage.setItem(ORDERS_STORAGE_KEY, JSON.stringify(orders));
-    } catch (error) {
-      console.error("บันทึก orders ไม่สำเร็จ:", error);
-    }
-  }, [orders]);
 
   const removeItem = (id: number | string) => {
     setCart((prev) => prev.filter((item) => item.id !== id));

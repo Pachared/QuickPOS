@@ -7,4 +7,6 @@ electron_1.contextBridge.exposeInMainWorld("pos", {
     updateProduct: (id, payload) => electron_1.ipcRenderer.invoke("products:update", id, payload),
     deleteProduct: (id) => electron_1.ipcRenderer.invoke("products:delete", id),
     increaseStockByBarcode: (barcode, amount = 1) => electron_1.ipcRenderer.invoke("products:increase-stock-by-barcode", barcode, amount),
+    listOrders: () => electron_1.ipcRenderer.invoke("orders:list"),
+    createOrder: (payload) => electron_1.ipcRenderer.invoke("orders:create", payload),
 });

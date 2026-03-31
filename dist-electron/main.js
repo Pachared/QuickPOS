@@ -6,6 +6,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const electron_1 = require("electron");
 const path_1 = __importDefault(require("path"));
 const products_1 = require("./ipc/products");
+const orders_1 = require("./ipc/orders");
 require("./database/sqlite");
 let mainWindow = null;
 const isDev = !electron_1.app.isPackaged;
@@ -21,15 +22,16 @@ function createWindow() {
         },
     });
     if (isDev) {
-        mainWindow.loadURL(DEV_SERVER_URL);
+        void mainWindow.loadURL(DEV_SERVER_URL);
         mainWindow.webContents.openDevTools();
     }
     else {
-        mainWindow.loadFile(path_1.default.join(__dirname, "../dist/index.html"));
+        void mainWindow.loadFile(path_1.default.join(__dirname, "../dist/index.html"));
     }
 }
 electron_1.app.whenReady().then(() => {
     (0, products_1.registerProductIpc)();
+    (0, orders_1.registerOrderIpc)();
     createWindow();
     electron_1.app.on("activate", () => {
         if (electron_1.BrowserWindow.getAllWindows().length === 0)

@@ -24,3 +24,5 @@ export type Order = {
   change: number;
   products: OrderItem[];
 };
+
+export type OrderCreatePayload = Omit<Order, "id">;

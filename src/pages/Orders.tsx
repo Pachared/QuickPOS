@@ -17,6 +17,7 @@ import {
   DialogContent,
   DialogActions,
   Fade,
+  Divider,
 } from "@mui/material";
 
 import ReceiptLongRoundedIcon from "@mui/icons-material/ReceiptLongRounded";
@@ -34,6 +35,23 @@ import { formatCurrency } from "../utils/format";
 interface OrdersProps {
   orders: Order[];
 }
+
+function escapeHtml(value: string) {
+  return value
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#039;");
+}
+
+const summaryCardSx = {
+  p: 2.2,
+  borderRadius: 5,
+  border: "1px solid #e5e7eb",
+  background: "#fff",
+  boxShadow: "0 8px 24px rgba(15, 23, 42, 0.05)",
+};
 
 export default function Orders({ orders }: OrdersProps) {
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
@@ -661,6 +679,10 @@ export default function Orders({ orders }: OrdersProps) {
                     sx={{
                       borderCollapse: "separate",
                       borderSpacing: 0,
+                      minWidth: 520,
+                      "& .MuiTableCell-root": {
+                        borderBottom: "1px solid #f1f5f9",
+                      },
                     }}
                   >
                     <TableHead>
@@ -669,168 +691,99 @@ export default function Orders({ orders }: OrdersProps) {
                           "& .MuiTableCell-root": {
                             fontWeight: 800,
                             color: "#374151",
-                            background: "#fcfcfd",
-                            borderBottom: "1px solid #e5e7eb",
+                            background: "#fff",
                           },
                         }}
                       >
-                        <TableCell>สินค้า</TableCell>
-                        <TableCell>จำนวน</TableCell>
-                        <TableCell>ราคา</TableCell>
+                        <TableCell>รายการ</TableCell>
+                        <TableCell align="right">จำนวน</TableCell>
+                        <TableCell align="right">ราคา</TableCell>
                         <TableCell align="right">รวม</TableCell>
                       </TableRow>
                     </TableHead>
 
                     <TableBody>
-                      {selectedOrder.products.map((item, index) => {
-                        const subtotal = item.qty * item.price;
-                        return (
-                          <TableRow key={`${item.id}-${index}`}>
-                            <TableCell>
-                              <Typography fontWeight={700} color="#111827">
-                                {item.name}
-                              </Typography>
-                            </TableCell>
-                            <TableCell>{item.qty}</TableCell>
-                            <TableCell>{formatCurrency(item.price)}</TableCell>
-                            <TableCell align="right" sx={{ fontWeight: 800 }}>
-                              {formatCurrency(subtotal)}
-                            </TableCell>
-                          </TableRow>
-                        );
-                      })}
+                      {selectedOrder.products.map((item, index) => (
+                        <TableRow key={`${item.id}-${index}`} hover>
+                          <TableCell>
+                            <Typography fontWeight={700} color="#111827">
+                              {item.name}
+                            </Typography>
+                          </TableCell>
+                          <TableCell align="right">{item.qty}</TableCell>
+                          <TableCell align="right">
+                            {formatCurrency(item.price)}
+                          </TableCell>
+                          <TableCell align="right">
+                            {formatCurrency(item.qty * item.price)}
+                          </TableCell>
+                        </TableRow>
+                      ))}
                     </TableBody>
                   </Table>
                 </Box>
               </Box>
 
-              <Box
-                display="grid"
-                gridTemplateColumns={{ xs: "1fr", md: "repeat(2, 1fr)" }}
-                gap={2}
+              <Paper
+                elevation={0}
+                sx={{
+                  p: 2.2,
+                  borderRadius: 4,
+                  border: "1px solid #e5e7eb",
+                  background: "#fff",
+                }}
               >
-                <Paper
-                  elevation={0}
-                  sx={{
-                    p: 2,
-                    borderRadius: 4,
-                    border: "1px solid #e5e7eb",
-                    background: "#fff",
-                  }}
-                >
-                  <Typography fontWeight={800} mb={1.2}>
-                    ข้อมูลการชำระเงิน
-                  </Typography>
-
-                  <Stack spacing={1.2}>
-                    <Stack direction="row" justifyContent="space-between">
-                      <Typography color="text.secondary">วิธีชำระ</Typography>
-                      <Chip
-                        size="small"
-                        icon={
-                          selectedOrder.paymentMethod === "cash" ? (
-                            <PaymentsRoundedIcon sx={{ fontSize: 16 }} />
-                          ) : (
-                            <AccountBalanceRoundedIcon sx={{ fontSize: 16 }} />
-                          )
-                        }
-                        label={
-                          selectedOrder.paymentMethod === "cash"
-                            ? "เงินสด"
-                            : "โอนเงิน"
-                        }
-                        sx={{
-                          height: 28,
-                          borderRadius: 999,
-                          fontWeight: 800,
-                          border:
-                            selectedOrder.paymentMethod === "cash"
-                              ? "1px solid #f3d38a"
-                              : "1px solid #bfd4f6",
-                          bgcolor:
-                            selectedOrder.paymentMethod === "cash"
-                              ? "#fff7db"
-                              : "#eaf2ff",
-                          color:
-                            selectedOrder.paymentMethod === "cash"
-                              ? "#8a5a00"
-                              : "#1d4f91",
-                          "& .MuiChip-label": {
-                            px: 1.2,
-                          },
-                          "& .MuiChip-icon": {
-                            ml: 0.8,
-                            mr: -0.3,
-                            color:
-                              selectedOrder.paymentMethod === "cash"
-                                ? "#9a6700"
-                                : "#2563eb",
-                          },
-                        }}
-                      />
-                    </Stack>
-
-                    <Stack direction="row" justifyContent="space-between">
-                      <Typography color="text.secondary">รับเงิน</Typography>
-                      <Typography fontWeight={700}>
-                        {formatCurrency(selectedOrder.receivedAmount)}
-                      </Typography>
-                    </Stack>
-
-                    <Stack direction="row" justifyContent="space-between">
-                      <Typography color="text.secondary">เงินทอน</Typography>
-                      <Typography fontWeight={700}>
-                        {formatCurrency(selectedOrder.change)}
-                      </Typography>
-                    </Stack>
+                <Stack spacing={1.2}>
+                  <Stack direction="row" justifyContent="space-between">
+                    <Typography color="text.secondary">จำนวนสินค้า</Typography>
+                    <Typography fontWeight={800}>
+                      {receiptProductCount} ชิ้น
+                    </Typography>
                   </Stack>
-                </Paper>
 
-                <Paper
-                  elevation={0}
-                  sx={{
-                    p: 2,
-                    borderRadius: 4,
-                    border: "1px solid #e5e7eb",
-                    background:
-                      "linear-gradient(135deg, #f3f4f6 0%, #eef2f7 100%)",
-                  }}
-                >
-                  <Typography fontWeight={800} mb={1.2}>
-                    สรุปรายการ
-                  </Typography>
+                  <Stack direction="row" justifyContent="space-between">
+                    <Typography color="text.secondary">วิธีชำระเงิน</Typography>
+                    <Typography fontWeight={800}>
+                      {selectedOrder.paymentMethod === "cash"
+                        ? "เงินสด"
+                        : "โอนเงิน"}
+                    </Typography>
+                  </Stack>
 
-                  <Stack spacing={1.2}>
-                    <Stack direction="row" justifyContent="space-between">
-                      <Typography color="text.secondary">จำนวนสินค้า</Typography>
-                      <Typography fontWeight={700}>
-                        {receiptProductCount} ชิ้น
-                      </Typography>
-                    </Stack>
+                  <Stack direction="row" justifyContent="space-between">
+                    <Typography color="text.secondary">รับเงิน</Typography>
+                    <Typography fontWeight={800}>
+                      {formatCurrency(selectedOrder.receivedAmount)}
+                    </Typography>
+                  </Stack>
 
-                    <Stack
-                      direction="row"
-                      justifyContent="space-between"
-                      alignItems="center"
+                  <Stack direction="row" justifyContent="space-between">
+                    <Typography color="text.secondary">เงินทอน</Typography>
+                    <Typography fontWeight={800}>
+                      {formatCurrency(selectedOrder.change)}
+                    </Typography>
+                  </Stack>
+
+                  <Divider sx={{ my: 0.5 }} />
+
+                  <Stack direction="row" justifyContent="space-between">
+                    <Typography
+                      fontSize={18}
+                      fontWeight={900}
+                      color="#111827"
                     >
-                      <Typography
-                        fontSize={18}
-                        fontWeight={900}
-                        color="#111827"
-                      >
-                        ยอดรวม
-                      </Typography>
-                      <Typography
-                        fontSize={22}
-                        fontWeight={900}
-                        color="#111827"
-                      >
-                        {formatCurrency(selectedOrder.total)}
-                      </Typography>
-                    </Stack>
+                      ยอดรวม
+                    </Typography>
+                    <Typography
+                      fontSize={22}
+                      fontWeight={900}
+                      color="#111827"
+                    >
+                      {formatCurrency(selectedOrder.total)}
+                    </Typography>
                   </Stack>
-                </Paper>
-              </Box>
+                </Stack>
+              </Paper>
             </Stack>
           )}
         </DialogContent>
@@ -866,21 +819,4 @@ export default function Orders({ orders }: OrdersProps) {
       </Dialog>
     </Box>
   );
-}
-
-const summaryCardSx = {
-  p: 2.2,
-  borderRadius: 5,
-  border: "1px solid #e5e7eb",
-  background: "#fff",
-  boxShadow: "0 8px 24px rgba(15, 23, 42, 0.05)",
-};
-
-function escapeHtml(value: string) {
-  return value
-    .replaceAll("&", "&amp;")
-    .replaceAll("<", "&lt;")
-    .replaceAll(">", "&gt;")
-    .replaceAll('"', "&quot;")
-    .replaceAll("'", "&#039;");
 }

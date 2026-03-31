@@ -14,6 +14,9 @@ declare global {
         barcode: string,
         amount?: number
       ) => Promise<ProductItem>;
+
+      listOrders: () => Promise<Order[]>;
+      createOrder: (payload: OrderCreatePayload) => Promise<Order>;
     };
   }
 
@@ -52,5 +55,35 @@ declare global {
     location: string;
     description: string;
     status: "active" | "inactive";
+  }
+
+  type PaymentMethod = "cash" | "transfer";
+
+  interface OrderItem {
+    id: number | string;
+    name: string;
+    qty: number;
+    price: number;
+  }
+
+  interface Order {
+    id: number;
+    date: string;
+    items: number;
+    total: number;
+    paymentMethod: PaymentMethod;
+    receivedAmount: number;
+    change: number;
+    products: OrderItem[];
+  }
+
+  interface OrderCreatePayload {
+    date: string;
+    items: number;
+    total: number;
+    paymentMethod: PaymentMethod;
+    receivedAmount: number;
+    change: number;
+    products: OrderItem[];
   }
 }
