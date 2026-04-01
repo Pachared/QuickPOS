@@ -36,12 +36,7 @@ import LocalAtmRoundedIcon from "@mui/icons-material/LocalAtmRounded";
 import AutoAwesomeRoundedIcon from "@mui/icons-material/AutoAwesomeRounded";
 import RestartAltRoundedIcon from "@mui/icons-material/RestartAltRounded";
 
-import type {
-  CartItem,
-  Order,
-  OrderItem,
-  PaymentMethod,
-} from "../types/pos";
+import type { CartItem, Order, OrderItem, PaymentMethod } from "../types/pos";
 import { formatCurrency } from "../utils/format";
 
 const drawerWidth = 360;
@@ -865,7 +860,8 @@ export default function Cart({
               if (value) setPaymentMethod(value);
             }}
             sx={{
-              mb: 2.25,
+              mt: 1.5,
+              mb: 1.5,
               display: "grid",
               gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
               gap: 1.25,
@@ -1017,7 +1013,8 @@ export default function Cart({
                     py: 1.15,
                     fontWeight: 800,
                     textTransform: "none",
-                    background: "linear-gradient(135deg, #111827 0%, #000 100%)",
+                    background:
+                      "linear-gradient(135deg, #111827 0%, #000 100%)",
                     "&:hover": {
                       background:
                         "linear-gradient(135deg, #000 0%, #111827 100%)",
@@ -1181,12 +1178,18 @@ export default function Cart({
                         <Typography fontWeight={800}>{SHOP_NAME}</Typography>
                       </Stack>
                       <Stack direction="row" justifyContent="space-between">
-                        <Typography color="text.secondary">พร้อมเพย์</Typography>
+                        <Typography color="text.secondary">
+                          พร้อมเพย์
+                        </Typography>
                         <Typography fontWeight={800}>{PROMPTPAY_ID}</Typography>
                       </Stack>
                       <Stack direction="row" justifyContent="space-between">
                         <Typography color="text.secondary">ยอดชำระ</Typography>
-                        <Typography fontSize={22} fontWeight={900} color="#111827">
+                        <Typography
+                          fontSize={22}
+                          fontWeight={900}
+                          color="#111827"
+                        >
                           {formatCurrency(total)}
                         </Typography>
                       </Stack>
@@ -1201,7 +1204,7 @@ export default function Cart({
         <DialogActions
           sx={{
             p: 3,
-            pt: 0,
+            pt: 1,
             background: "#f8fafc",
           }}
         >
@@ -1209,6 +1212,7 @@ export default function Cart({
             <Paper
               elevation={0}
               sx={{
+                mt: 1,
                 p: 2,
                 borderRadius: 4,
                 border: `1px solid ${summaryTone.border}`,
@@ -1256,17 +1260,6 @@ export default function Cart({
                   )}
                 </Typography>
               </Stack>
-
-              {paymentMethod === "cash" && !isEnoughCash && (
-                <Typography
-                  mt={1.2}
-                  fontSize={13}
-                  fontWeight={800}
-                  color="#dc2626"
-                >
-                  เงินที่รับมายังไม่ครบจำนวน
-                </Typography>
-              )}
             </Paper>
 
             <Stack direction="row" spacing={1.2} width="100%">
@@ -1301,7 +1294,8 @@ export default function Cart({
                     py: 1.15,
                     fontWeight: 900,
                     textTransform: "none",
-                    background: "linear-gradient(135deg, #111827 0%, #000 100%)",
+                    background:
+                      "linear-gradient(135deg, #111827 0%, #000 100%)",
                     "&:hover": {
                       background:
                         "linear-gradient(135deg, #000 0%, #111827 100%)",
