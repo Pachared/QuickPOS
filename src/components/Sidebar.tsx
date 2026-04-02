@@ -22,29 +22,13 @@ import { useNavigate, useLocation } from "react-router-dom";
 const drawerWidth = 100;
 
 const mainMenu = [
-  {
-    name: "POS",
-    path: "/",
-    icon: <PointOfSaleIcon />,
-  },
-  {
-    name: "สินค้าทั้งหมด",
-    path: "/products",
-    icon: <InventoryIcon />,
-  },
-  {
-    name: "การขายทั้งหมด",
-    path: "/orders",
-    icon: <ReceiptIcon />,
-  },
+  { name: "POS", path: "/", icon: <PointOfSaleIcon /> },
+  { name: "สินค้าทั้งหมด", path: "/products", icon: <InventoryIcon /> },
+  { name: "การขายทั้งหมด", path: "/orders", icon: <ReceiptIcon /> },
 ];
 
 const bottomMenu = [
-  {
-    name: "ตั้งค่าระบบ",
-    path: "/settings",
-    icon: <SettingsIcon />,
-  },
+  { name: "ตั้งค่าระบบ", path: "/settings", icon: <SettingsIcon /> },
 ];
 
 const buttonStyle = {
@@ -53,21 +37,23 @@ const buttonStyle = {
   justifyContent: "center",
   height: 75,
   width: 75,
+  transition: "all 0.2s ease",
 
   "&.Mui-selected": {
-    backgroundColor: "#f1f5f9",
+    background:
+      "linear-gradient(135deg, #111827 0%, #000 100%)",
+    boxShadow: "0 10px 20px rgba(15, 23, 42, 0.25)",
   },
 
   "&:hover": {
-    backgroundColor: "#f1f5f9",
-    transform: "scale(1.05)",
-    transition: "all 0.2s ease",
+    backgroundColor: "#f3f4f6",
+    transform: "translateY(-2px)",
   },
 };
 
 const iconStyle = (active: boolean) => ({
   minWidth: "unset",
-  color: active ? "#5e17eb" : "#9ca3af",
+  color: active ? "#ffffff" : "#9ca3af",
   justifyContent: "center",
 
   "& svg": {
@@ -94,7 +80,8 @@ export default function Sidebar() {
           height: "calc(100% - 32px)",
           borderRadius: "25px",
           border: "1px solid #e5e7eb",
-          backgroundColor: "#ffffff",
+          background:
+            "linear-gradient(180deg, #ffffff 0%, #f9fafb 100%)",
           display: "flex",
           flexDirection: "column",
           alignItems: "center",
@@ -118,6 +105,7 @@ export default function Sidebar() {
           sx={{
             height: 35,
             objectFit: "contain",
+            filter: "grayscale(10%)",
           }}
         />
       </Toolbar>
@@ -135,6 +123,7 @@ export default function Sidebar() {
       <List
         sx={{
           p: 1,
+          pt: 1.5,
           width: "100%",
           display: "flex",
           flexDirection: "column",
@@ -152,14 +141,15 @@ export default function Sidebar() {
                 selected={active}
                 sx={buttonStyle}
               >
-                <ListItemIcon sx={iconStyle(active)}>{item.icon}</ListItemIcon>
+                <ListItemIcon sx={iconStyle(active)}>
+                  {item.icon}
+                </ListItemIcon>
               </ListItemButton>
             </Tooltip>
           );
         })}
       </List>
 
-      {/* ดันลงล่าง */}
       <Box sx={{ flexGrow: 1 }} />
 
       {/* SETTINGS */}
@@ -182,7 +172,9 @@ export default function Sidebar() {
                 selected={active}
                 sx={buttonStyle}
               >
-                <ListItemIcon sx={iconStyle(active)}>{item.icon}</ListItemIcon>
+                <ListItemIcon sx={iconStyle(active)}>
+                  {item.icon}
+                </ListItemIcon>
               </ListItemButton>
             </Tooltip>
           );
@@ -191,7 +183,7 @@ export default function Sidebar() {
 
       {/* Footer */}
       <Box sx={{ pb: 2 }}>
-        <Typography fontSize={14} color="#999">
+        <Typography fontSize={13} color="#9ca3af">
           v1.0
         </Typography>
       </Box>
