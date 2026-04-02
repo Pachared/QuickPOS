@@ -12,8 +12,6 @@ import Settings from "./pages/Settings";
 
 import type { CartItem, Order } from "./types/pos";
 
-const CART_STORAGE_KEY = "quickpos_cart";
-
 export default function App() {
   const [cart, setCart] = useState<CartItem[]>([]);
   const [orders, setOrders] = useState<Order[]>([]);
@@ -31,28 +29,8 @@ export default function App() {
   }, []);
 
   useEffect(() => {
-    try {
-      const savedCart = localStorage.getItem(CART_STORAGE_KEY);
-
-      if (savedCart) {
-        setCart(JSON.parse(savedCart));
-      }
-    } catch (error) {
-      console.error("โหลด cart จาก localStorage ไม่สำเร็จ:", error);
-    }
-  }, []);
-
-  useEffect(() => {
     void loadOrders();
   }, [loadOrders]);
-
-  useEffect(() => {
-    try {
-      localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(cart));
-    } catch (error) {
-      console.error("บันทึก cart ไม่สำเร็จ:", error);
-    }
-  }, [cart]);
 
   const removeItem = (id: number | string) => {
     setCart((prev) => prev.filter((item) => item.id !== id));
