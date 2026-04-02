@@ -56,10 +56,10 @@
       "package.json"
     ],
     "win": {
-      "icon": "assets/QuickPOS_Windows.ico"
+      "icon": "assets/QuickPOS.ico"
     },
     "mac": {
-      "icon": "assets/QuickPOS_IOS.icns"
+      "icon": "assets/QuickPOS.icns"
     }
   }
 }
