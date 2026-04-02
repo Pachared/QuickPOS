@@ -483,7 +483,7 @@ export default function POS({ cart, setCart }: Props) {
             >
               <Box
                 sx={{
-                  height: 180,
+                  height: 200,
                   borderRadius: 4,
                   background: "linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%)",
                   display: "flex",

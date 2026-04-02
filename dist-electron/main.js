@@ -15,6 +15,7 @@ function createWindow() {
     mainWindow = new electron_1.BrowserWindow({
         width: 1400,
         height: 900,
+        icon: path_1.default.join(__dirname, "../assets/QuickPOS.png"),
         webPreferences: {
             preload: path_1.default.join(__dirname, "preload.js"),
             contextIsolation: true,

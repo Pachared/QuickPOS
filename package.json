@@ -46,15 +46,20 @@
     "appId": "com.quickpos.app",
     "productName": "QuickPOS",
     "directories": {
-      "output": "release"
+      "output": "release",
+      "buildResources": "assets"
     },
     "files": [
       "dist/**/*",
       "dist-electron/**/*",
+      "assets/**/*",
       "package.json"
     ],
     "win": {
-      "target": "nsis"
+      "icon": "assets/QuickPOS_Windows.ico"
+    },
+    "mac": {
+      "icon": "assets/QuickPOS_IOS.icns"
     }
   }
 }
