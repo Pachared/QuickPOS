@@ -36,13 +36,31 @@ import LocalAtmRoundedIcon from "@mui/icons-material/LocalAtmRounded";
 import AutoAwesomeRoundedIcon from "@mui/icons-material/AutoAwesomeRounded";
 import RestartAltRoundedIcon from "@mui/icons-material/RestartAltRounded";
 
-import type { CartItem, Order, OrderItem, PaymentMethod } from "../types/pos";
+import type {
+  CartItem,
+  Order,
+  OrderItem,
+  PaymentMethod,
+  PosSettings,
+} from "../types/pos";
 import { formatCurrency } from "../utils/format";
 
 const drawerWidth = 360;
 const CASH_TYPES = [20, 50, 100, 500, 1000];
-const PROMPTPAY_ID = "0812345678";
-const SHOP_NAME = "QuickPOS Store";
+
+const defaultSettings: PosSettings = {
+  shopName: "QuickPOS Store",
+  receiptFooter: "ขอบคุณที่ใช้บริการ",
+  receiptHeaderNote: "ใบเสร็จรับเงิน / ใบกำกับอย่างย่อ",
+  printerPaperSize: "80mm",
+  copyCount: 1,
+  promptPayId: "",
+  enableCash: true,
+  enableTransfer: true,
+  autoPrintReceipt: false,
+  showPrintPreview: true,
+  soundOnCheckout: true,
+};
 
 interface CartProps {
   cart: CartItem[];
@@ -70,6 +88,7 @@ export default function Cart({
   clearCart,
   onCheckoutSuccess,
 }: CartProps) {
+  const [settings, setSettings] = useState<PosSettings>(defaultSettings);
   const [openCheckout, setOpenCheckout] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("cash");
   const [cashCounts, setCashCounts] = useState<Record<number, number>>({
@@ -122,7 +141,11 @@ export default function Cart({
 
   const canConfirmPayment =
     !isSavingOrder &&
-    (paymentMethod === "transfer" || (hasSelectedCash && isEnoughCash));
+    ((paymentMethod === "cash" &&
+      settings.enableCash &&
+      hasSelectedCash &&
+      isEnoughCash) ||
+      (paymentMethod === "transfer" && settings.enableTransfer));
 
   const summaryTone =
     paymentMethod === "cash"
@@ -165,6 +188,22 @@ export default function Cart({
     }));
   };
 
+  const loadSettings = async () => {
+    try {
+      const data = await window.pos.getSettings();
+      setSettings(data);
+      return data;
+    } catch (error) {
+      console.error("โหลด settings สำหรับ cart ไม่สำเร็จ:", error);
+      showSnackbar("โหลดการตั้งค่าไม่สำเร็จ", "error");
+      return null;
+    }
+  };
+
+  useEffect(() => {
+    void loadSettings();
+  }, []);
+
   useEffect(() => {
     if (!openCheckout) return;
 
@@ -188,9 +227,14 @@ export default function Cart({
         return;
       }
 
+      if (!settings.promptPayId) {
+        setQrDataUrl("");
+        return;
+      }
+
       try {
         setIsGeneratingQr(true);
-        const payload = generatePayload(PROMPTPAY_ID, { amount: total });
+        const payload = generatePayload(settings.promptPayId, { amount: total });
         const dataUrl = await QRCode.toDataURL(payload, {
           width: 280,
           margin: 1,
@@ -207,7 +251,7 @@ export default function Cart({
     };
 
     void generateQr();
-  }, [openCheckout, paymentMethod, total]);
+  }, [openCheckout, paymentMethod, total, settings.promptPayId]);
 
   const addCash = (value: number) => {
     setCashCounts((prev) => ({
@@ -254,8 +298,17 @@ export default function Cart({
     showSnackbar("คำนวณเงินสดพอดีให้แล้ว", "info");
   };
 
-  const resetCheckoutState = () => {
-    setPaymentMethod("cash");
+  const resetCheckoutState = (nextSettings?: PosSettings) => {
+    const activeSettings = nextSettings ?? settings;
+
+    if (activeSettings.enableCash) {
+      setPaymentMethod("cash");
+    } else if (activeSettings.enableTransfer) {
+      setPaymentMethod("transfer");
+    } else {
+      setPaymentMethod("cash");
+    }
+
     resetCash();
     setQrDataUrl("");
     setPaid(false);
@@ -263,13 +316,21 @@ export default function Cart({
     setSavedOrder(null);
   };
 
-  const handleOpenCheckout = () => {
+  const handleOpenCheckout = async () => {
     if (cart.length === 0) {
       showSnackbar("ไม่มีสินค้าในตะกร้า", "warning");
       return;
     }
 
-    resetCheckoutState();
+    const latestSettings = await loadSettings();
+    if (!latestSettings) return;
+
+    if (!latestSettings.enableCash && !latestSettings.enableTransfer) {
+      showSnackbar("ยังไม่ได้เปิดวิธีชำระเงินในหน้า Settings", "warning");
+      return;
+    }
+
+    resetCheckoutState(latestSettings);
     setOpenCheckout(true);
   };
 
@@ -279,6 +340,8 @@ export default function Cart({
   };
 
   const playSuccessBeep = async () => {
+    if (!settings.soundOnCheckout) return;
+
     try {
       const AudioCtx =
         window.AudioContext ||
@@ -318,6 +381,7 @@ export default function Cart({
   const buildReceiptHtml = () => {
     const receiptOrder = savedOrder;
     const receiptItems = receiptOrder?.products ?? [];
+    const paperWidth = settings.printerPaperSize === "58mm" ? "58mm" : "80mm";
 
     const paidAmount =
       receiptOrder?.paymentMethod === "cash"
@@ -360,7 +424,7 @@ export default function Cart({
             background: #fff;
           }
           .receipt {
-            width: 80mm;
+            width: ${paperWidth};
             padding: 10px;
             margin: 0 auto;
           }
@@ -406,9 +470,10 @@ export default function Cart({
             margin-top: 12px;
             text-align: center;
             font-size: 12px;
+            white-space: pre-wrap;
           }
           @media print {
-            @page { size: 80mm auto; margin: 0; }
+            @page { size: ${paperWidth} auto; margin: 0; }
             body { print-color-adjust: exact; -webkit-print-color-adjust: exact; }
           }
         </style>
@@ -416,8 +481,8 @@ export default function Cart({
       <body>
         <div class="receipt">
           <div class="center">
-            <div class="title">${escapeHtml(SHOP_NAME)}</div>
-            <div class="muted">ใบเสร็จรับเงิน / Receipt</div>
+            <div class="title">${escapeHtml(settings.shopName)}</div>
+            <div class="muted">${escapeHtml(settings.receiptHeaderNote)}</div>
             <div class="muted">เลขที่: ${escapeHtml(receiptNo)}</div>
             <div class="muted">${new Date().toLocaleString("th-TH")}</div>
           </div>
@@ -455,7 +520,7 @@ export default function Cart({
           )}</span></div>
 
           <div class="divider"></div>
-          <div class="footer">ขอบคุณที่ใช้บริการ</div>
+          <div class="footer">${escapeHtml(settings.receiptFooter)}</div>
         </div>
       </body>
       </html>
@@ -468,25 +533,48 @@ export default function Cart({
       return;
     }
 
-    const receiptWindow = window.open("", "_blank", "width=420,height=800");
-    if (!receiptWindow) {
-      showSnackbar("ไม่สามารถเปิดหน้าพิมพ์ได้", "error");
-      return;
+    const copies = Math.max(1, settings.copyCount);
+
+    for (let i = 0; i < copies; i += 1) {
+      const receiptWindow = window.open("", "_blank", "width=420,height=800");
+      if (!receiptWindow) {
+        showSnackbar("ไม่สามารถเปิดหน้าพิมพ์ได้", "error");
+        return;
+      }
+
+      receiptWindow.document.open();
+      receiptWindow.document.write(buildReceiptHtml());
+      receiptWindow.document.close();
+
+      receiptWindow.onload = () => {
+        receiptWindow.focus();
+        receiptWindow.print();
+
+        if (!settings.showPrintPreview) {
+          receiptWindow.close();
+        }
+      };
     }
-
-    receiptWindow.document.open();
-    receiptWindow.document.write(buildReceiptHtml());
-    receiptWindow.document.close();
-
-    receiptWindow.onload = () => {
-      receiptWindow.focus();
-      receiptWindow.print();
-    };
 
     showSnackbar("เปิดหน้าพิมพ์ใบเสร็จแล้ว", "success");
   };
 
   const handleConfirmPayment = async () => {
+    if (paymentMethod === "cash" && !settings.enableCash) {
+      showSnackbar("ยังไม่ได้เปิดการชำระเงินสด", "warning");
+      return;
+    }
+
+    if (paymentMethod === "transfer" && !settings.enableTransfer) {
+      showSnackbar("ยังไม่ได้เปิดการชำระแบบโอนเงิน", "warning");
+      return;
+    }
+
+    if (paymentMethod === "transfer" && !settings.promptPayId) {
+      showSnackbar("กรุณาตั้งค่า PromptPay ก่อนใช้งาน", "warning");
+      return;
+    }
+
     if (paymentMethod === "cash" && !hasSelectedCash) {
       showSnackbar("กรุณาเลือกแบงก์ที่ลูกค้าจ่าย", "warning");
       return;
@@ -509,7 +597,7 @@ export default function Cart({
         change: paymentMethod === "cash" ? Math.max(change, 0) : 0,
         products: cart.map(
           (item): OrderItem => ({
-            id: item.id,
+            id: Number(item.id),
             name: item.name,
             qty: item.qty,
             price: Number(item.price),
@@ -524,6 +612,12 @@ export default function Cart({
 
       setPaid(true);
       await playSuccessBeep();
+
+      if (settings.autoPrintReceipt) {
+        setTimeout(() => {
+          handlePrintReceipt();
+        }, 150);
+      }
 
       showSnackbar(
         paymentMethod === "cash"
@@ -550,7 +644,10 @@ export default function Cart({
       return;
     }
 
-    handlePrintReceipt();
+    if (!settings.autoPrintReceipt) {
+      handlePrintReceipt();
+    }
+
     clearCart?.();
     handleCloseCheckout();
     showSnackbar("จบการขายเรียบร้อย", "success");
@@ -857,7 +954,10 @@ export default function Cart({
             fullWidth
             value={paymentMethod}
             onChange={(_, value) => {
-              if (value) setPaymentMethod(value);
+              if (!value) return;
+              if (value === "cash" && !settings.enableCash) return;
+              if (value === "transfer" && !settings.enableTransfer) return;
+              setPaymentMethod(value);
             }}
             sx={{
               mt: 1.5,
@@ -885,17 +985,17 @@ export default function Cart({
               },
             }}
           >
-            <ToggleButton value="cash">
+            <ToggleButton value="cash" disabled={!settings.enableCash}>
               <PaymentsRoundedIcon sx={{ mr: 1 }} />
               เงินสด
             </ToggleButton>
-            <ToggleButton value="transfer">
+            <ToggleButton value="transfer" disabled={!settings.enableTransfer}>
               <AccountBalanceRoundedIcon sx={{ mr: 1 }} />
               โอนเงิน
             </ToggleButton>
           </ToggleButtonGroup>
 
-          {paymentMethod === "cash" && (
+          {paymentMethod === "cash" && settings.enableCash && (
             <>
               <Box
                 sx={{
@@ -1088,7 +1188,7 @@ export default function Cart({
             </>
           )}
 
-          {paymentMethod === "transfer" && (
+          {paymentMethod === "transfer" && settings.enableTransfer && (
             <Box
               sx={{
                 p: 2.2,
@@ -1149,7 +1249,9 @@ export default function Cart({
                       >
                         <QrCode2RoundedIcon />
                       </Avatar>
-                      <Typography fontWeight={800}>ไม่พบ QR</Typography>
+                      <Typography fontWeight={800}>
+                        {settings.promptPayId ? "ไม่พบ QR" : "ยังไม่ได้ตั้งค่า PromptPay"}
+                      </Typography>
                     </Stack>
                   )}
                 </Box>
@@ -1175,13 +1277,17 @@ export default function Cart({
                     <Stack spacing={1}>
                       <Stack direction="row" justifyContent="space-between">
                         <Typography color="text.secondary">ชื่อร้าน</Typography>
-                        <Typography fontWeight={800}>{SHOP_NAME}</Typography>
+                        <Typography fontWeight={800}>
+                          {settings.shopName}
+                        </Typography>
                       </Stack>
                       <Stack direction="row" justifyContent="space-between">
                         <Typography color="text.secondary">
                           พร้อมเพย์
                         </Typography>
-                        <Typography fontWeight={800}>{PROMPTPAY_ID}</Typography>
+                        <Typography fontWeight={800}>
+                          {settings.promptPayId || "-"}
+                        </Typography>
                       </Stack>
                       <Stack direction="row" justifyContent="space-between">
                         <Typography color="text.secondary">ยอดชำระ</Typography>
@@ -1243,41 +1349,32 @@ export default function Cart({
                 justifyContent="space-between"
                 alignItems="center"
               >
-                <Typography
-                  fontSize={18}
-                  fontWeight={900}
-                  color={summaryTone.secondary}
-                >
+                <Typography color={summaryTone.secondary} fontWeight={800}>
                   เงินทอน
                 </Typography>
                 <Typography
-                  fontSize={22}
+                  fontSize={20}
                   fontWeight={900}
                   color={summaryTone.secondary}
                 >
-                  {formatCurrency(
-                    paymentMethod === "cash" ? Math.max(change, 0) : 0
-                  )}
+                  {formatCurrency(paymentMethod === "cash" ? Math.max(change, 0) : 0)}
                 </Typography>
               </Stack>
             </Paper>
 
-            <Stack direction="row" spacing={1.2} width="100%">
+            <Stack direction={{ xs: "column", sm: "row" }} spacing={1.2}>
               <Button
                 fullWidth
+                variant="outlined"
+                color="inherit"
                 onClick={handleCloseCheckout}
+                disabled={isSavingOrder}
                 sx={{
                   borderRadius: 3,
-                  py: 1.15,
-                  fontWeight: 800,
+                  py: 1.25,
                   textTransform: "none",
-                  color: "#374151",
-                  background: "#fff",
-                  border: "1px solid #d1d5db",
-                  "&:hover": {
-                    background: "#f9fafb",
-                    borderColor: "#9ca3af",
-                  },
+                  fontWeight: 800,
+                  borderColor: "#d1d5db",
                 }}
               >
                 ปิด
@@ -1289,22 +1386,17 @@ export default function Cart({
                   variant="contained"
                   onClick={handleConfirmPayment}
                   disabled={!canConfirmPayment}
+                  startIcon={<PaymentsRoundedIcon />}
                   sx={{
+                    py: 1.25,
                     borderRadius: 3,
-                    py: 1.15,
-                    fontWeight: 900,
                     textTransform: "none",
-                    background:
-                      "linear-gradient(135deg, #111827 0%, #000 100%)",
-                    "&:hover": {
-                      background:
-                        "linear-gradient(135deg, #000 0%, #111827 100%)",
-                    },
-                    "&.Mui-disabled": {
-                      background: "#e5e7eb",
-                      color: "#9ca3af",
-                      boxShadow: "none",
-                    },
+                    fontWeight: 900,
+                    boxShadow: "none",
+                    background: canConfirmPayment
+                      ? "linear-gradient(135deg, #111827 0%, #374151 100%)"
+                      : "#d1d5db",
+                    color: canConfirmPayment ? "#fff" : "#6b7280",
                   }}
                 >
                   {isSavingOrder ? "กำลังบันทึก..." : "ยืนยันการชำระเงิน"}
@@ -1312,17 +1404,19 @@ export default function Cart({
               ) : (
                 <Button
                   fullWidth
-                  variant="outlined"
-                  startIcon={<PrintRoundedIcon />}
+                  variant="contained"
                   onClick={handleFinishSale}
+                  startIcon={<PrintRoundedIcon />}
                   sx={{
+                    py: 1.25,
                     borderRadius: 3,
-                    py: 1.15,
-                    fontWeight: 900,
                     textTransform: "none",
+                    fontWeight: 900,
+                    boxShadow: "none",
+                    background: "linear-gradient(135deg, #111827 0%, #374151 100%)",
                   }}
                 >
-                  พิมพ์ใบเสร็จ / จบการขาย
+                  จบการขาย
                 </Button>
               )}
             </Stack>
@@ -1332,15 +1426,16 @@ export default function Cart({
 
       <Snackbar
         open={snackbar.open}
-        autoHideDuration={2200}
+        autoHideDuration={2600}
         onClose={handleCloseSnackbar}
         anchorOrigin={{ vertical: "top", horizontal: "center" }}
+        TransitionComponent={SlideDownTransition}
       >
         <Alert
           onClose={handleCloseSnackbar}
           severity={snackbar.severity}
           variant="filled"
-          sx={{ borderRadius: 3, fontWeight: 700 }}
+          sx={{ width: "100%", borderRadius: 3 }}
         >
           {snackbar.message}
         </Alert>
