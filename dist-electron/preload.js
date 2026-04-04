@@ -9,4 +9,7 @@ electron_1.contextBridge.exposeInMainWorld("pos", {
     increaseStockByBarcode: (barcode, amount = 1) => electron_1.ipcRenderer.invoke("products:increase-stock-by-barcode", barcode, amount),
     listOrders: () => electron_1.ipcRenderer.invoke("orders:list"),
     createOrder: (payload) => electron_1.ipcRenderer.invoke("orders:create", payload),
+    getSettings: () => electron_1.ipcRenderer.invoke("settings:get"),
+    saveSettings: (payload) => electron_1.ipcRenderer.invoke("settings:save", payload),
+    resetSettings: () => electron_1.ipcRenderer.invoke("settings:reset"),
 });

@@ -7,6 +7,7 @@ const electron_1 = require("electron");
 const path_1 = __importDefault(require("path"));
 const products_1 = require("./ipc/products");
 const orders_1 = require("./ipc/orders");
+const settings_1 = require("./ipc/settings");
 require("./database/sqlite");
 let mainWindow = null;
 const isDev = !electron_1.app.isPackaged;
@@ -33,6 +34,7 @@ function createWindow() {
 electron_1.app.whenReady().then(() => {
     (0, products_1.registerProductIpc)();
     (0, orders_1.registerOrderIpc)();
+    (0, settings_1.registerSettingsIpc)();
     createWindow();
     electron_1.app.on("activate", () => {
         if (electron_1.BrowserWindow.getAllWindows().length === 0)
