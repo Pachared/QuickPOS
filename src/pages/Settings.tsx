@@ -29,24 +29,10 @@ import PrintRoundedIcon from "@mui/icons-material/PrintRounded";
 import SaveRoundedIcon from "@mui/icons-material/SaveRounded";
 import RestartAltRoundedIcon from "@mui/icons-material/RestartAltRounded";
 import QrCode2RoundedIcon from "@mui/icons-material/QrCode2Rounded";
-import CampaignRoundedIcon from "@mui/icons-material/CampaignRounded";
-
-type PosSettings = {
-  receiptFooter: string;
-  receiptHeaderNote: string;
-  printerPaperSize: "58mm" | "80mm";
-  copyCount: number;
-  promptPayId: string;
-  enableCash: boolean;
-  enableTransfer: boolean;
-  autoPrintReceipt: boolean;
-  showPrintPreview: boolean;
-  soundOnCheckout: boolean;
-};
-
-const STORAGE_KEY = "quickpos_settings";
+import type { PosSettings } from "../types/pos";
 
 const defaultSettings: PosSettings = {
+  shopName: "QuickPOS Store",
   receiptFooter: "ขอบคุณที่ใช้บริการ",
   receiptHeaderNote: "ใบเสร็จรับเงิน / ใบกำกับอย่างย่อ",
   printerPaperSize: "80mm",
@@ -115,6 +101,8 @@ export default function Settings() {
   const [settings, setSettings] = useState<PosSettings>(defaultSettings);
   const [headerHeight, setHeaderHeight] = useState(0);
   const headerRef = useRef<HTMLDivElement | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSaving, setIsSaving] = useState(false);
 
   const [snackbar, setSnackbar] = useState<{
     open: boolean;
@@ -143,15 +131,19 @@ export default function Settings() {
   };
 
   useEffect(() => {
-    try {
-      const saved = localStorage.getItem(STORAGE_KEY);
-      if (saved) {
-        setSettings({ ...defaultSettings, ...JSON.parse(saved) });
+    const loadSettings = async () => {
+      try {
+        const saved = await window.pos.getSettings();
+        setSettings(saved);
+      } catch (error) {
+        console.error("โหลด settings ไม่สำเร็จ:", error);
+        showSnackbar("โหลดการตั้งค่าไม่สำเร็จ", "error");
+      } finally {
+        setIsLoading(false);
       }
-    } catch (error) {
-      console.error("โหลด settings ไม่สำเร็จ:", error);
-      showSnackbar("โหลดการตั้งค่าไม่สำเร็จ", "error");
-    }
+    };
+
+    void loadSettings();
   }, []);
 
   useEffect(() => {
@@ -180,49 +172,51 @@ export default function Settings() {
     };
   }, []);
 
-  const saveSettings = () => {
+  const saveSettings = async () => {
     try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(settings));
+      setIsSaving(true);
+      const saved = await window.pos.saveSettings(settings);
+      setSettings(saved);
       showSnackbar("บันทึกการตั้งค่าเรียบร้อยแล้ว", "success");
     } catch (error) {
       console.error("บันทึก settings ไม่สำเร็จ:", error);
-      showSnackbar("ไม่สามารถบันทึกการตั้งค่าได้", "error");
+      showSnackbar(
+        error instanceof Error ? error.message : "ไม่สามารถบันทึกการตั้งค่าได้",
+        "error"
+      );
+    } finally {
+      setIsSaving(false);
     }
   };
 
-  const resetSettings = () => {
+  const resetSettings = async () => {
     const confirmed = window.confirm(
       "ต้องการรีเซ็ตการตั้งค่ากลับค่าเริ่มต้นหรือไม่?"
     );
     if (!confirmed) return;
 
     try {
-      setSettings(defaultSettings);
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(defaultSettings));
+      setIsSaving(true);
+      const reset = await window.pos.resetSettings();
+      setSettings(reset);
       showSnackbar("รีเซ็ตการตั้งค่าเรียบร้อยแล้ว", "info");
     } catch (error) {
       console.error("รีเซ็ต settings ไม่สำเร็จ:", error);
       showSnackbar("ไม่สามารถรีเซ็ตการตั้งค่าได้", "error");
+    } finally {
+      setIsSaving(false);
     }
   };
 
   return (
-    <Box
-      sx={{
-        minHeight: "100%",
-      }}
-    >
+    <Box sx={{ minHeight: "100%" }}>
       <Box
         ref={headerRef}
         sx={{
           position: "fixed",
           top: 16,
-          left: {
-            md: 136,
-          },
-          right: {
-            md: 396,
-          },
+          left: { md: 136 },
+          right: { md: 396 },
           zIndex: 1200,
           p: { xs: 2.25, md: 3 },
           borderRadius: "25px",
@@ -249,18 +243,13 @@ export default function Settings() {
               ตั้งค่าระบบ
             </Typography>
             <Typography variant="body2" sx={{ opacity: 0.82 }}>
-              ตั้งค่าการพิมพ์ การชำระเงิน
-              และตัวเลือกการใช้งานสำหรับเครื่องขายหน้าร้าน
+              ตั้งค่าการพิมพ์ การชำระเงิน และตัวเลือกการใช้งานสำหรับเครื่องขายหน้าร้าน
             </Typography>
           </Box>
         </Stack>
       </Box>
 
-      <Box
-        sx={{
-          height: `${headerHeight + 16}px`,
-        }}
-      />
+      <Box sx={{ height: `${headerHeight + 16}px` }} />
 
       <Box
         display="grid"
@@ -284,6 +273,20 @@ export default function Settings() {
 
               <Box sx={{ p: 3 }}>
                 <Stack spacing={2.2}>
+                  <TextField
+                    label="ชื่อร้าน"
+                    value={settings.shopName}
+                    onChange={(e) =>
+                      setSettings({
+                        ...settings,
+                        shopName: e.target.value,
+                      })
+                    }
+                    fullWidth
+                    sx={inputSx}
+                    disabled={isLoading || isSaving}
+                  />
+
                   <Box
                     display="grid"
                     gridTemplateColumns={{ xs: "1fr", md: "1fr 1fr" }}
@@ -301,6 +304,7 @@ export default function Settings() {
                       }
                       fullWidth
                       sx={inputSx}
+                      disabled={isLoading || isSaving}
                     >
                       <MenuItem value="58mm">58 mm</MenuItem>
                       <MenuItem value="80mm">80 mm</MenuItem>
@@ -318,6 +322,7 @@ export default function Settings() {
                       }
                       fullWidth
                       sx={inputSx}
+                      disabled={isLoading || isSaving}
                     >
                       <MenuItem value={1}>1 ชุด</MenuItem>
                       <MenuItem value={2}>2 ชุด</MenuItem>
@@ -336,6 +341,7 @@ export default function Settings() {
                     }
                     fullWidth
                     sx={inputSx}
+                    disabled={isLoading || isSaving}
                   />
 
                   <TextField
@@ -351,6 +357,7 @@ export default function Settings() {
                     }
                     fullWidth
                     sx={inputSx}
+                    disabled={isLoading || isSaving}
                   />
                 </Stack>
               </Box>
@@ -384,6 +391,7 @@ export default function Settings() {
                     }
                     fullWidth
                     sx={inputSx}
+                    disabled={isLoading || isSaving}
                     InputProps={{
                       endAdornment: (
                         <Avatar
@@ -422,6 +430,7 @@ export default function Settings() {
                                 enableCash: e.target.checked,
                               })
                             }
+                            disabled={isLoading || isSaving}
                           />
                         }
                         label="เปิดใช้งานการชำระแบบเงินสด"
@@ -438,6 +447,7 @@ export default function Settings() {
                                 enableTransfer: e.target.checked,
                               })
                             }
+                            disabled={isLoading || isSaving}
                           />
                         }
                         label="เปิดใช้งานการชำระแบบโอนเงิน"
@@ -486,6 +496,7 @@ export default function Settings() {
                                 autoPrintReceipt: e.target.checked,
                               })
                             }
+                            disabled={isLoading || isSaving}
                           />
                         }
                         label="พิมพ์ใบเสร็จอัตโนมัติหลังชำระเงิน"
@@ -502,6 +513,7 @@ export default function Settings() {
                                 showPrintPreview: e.target.checked,
                               })
                             }
+                            disabled={isLoading || isSaving}
                           />
                         }
                         label="แสดงตัวอย่างก่อนพิมพ์"
@@ -518,6 +530,7 @@ export default function Settings() {
                                 soundOnCheckout: e.target.checked,
                               })
                             }
+                            disabled={isLoading || isSaving}
                           />
                         }
                         label="เปิดเสียงแจ้งเตือนตอนชำระเงินสำเร็จ"
@@ -538,83 +551,50 @@ export default function Settings() {
               border: "1px solid #e5e7eb",
             }}
           >
-            <CardContent sx={{ p: 0 }}>
-              <SectionHeader
-                icon={<CampaignRoundedIcon />}
-                title="สรุปการตั้งค่าปัจจุบัน"
-                subtitle="ภาพรวมของค่าที่ใช้งานอยู่ในระบบตอนนี้"
-              />
-
-              <Box sx={{ p: 3 }}>
-                <Paper
-                  elevation={0}
-                  sx={{
-                    p: 2,
-                    borderRadius: 4,
-                    border: "1px solid #e5e7eb",
-                    background:
-                      "linear-gradient(135deg, #f9fafb 0%, #f3f4f6 100%)",
-                  }}
-                >
-                  <Stack spacing={1}>
-                    <InfoRow
-                      label="ขนาดกระดาษ"
-                      value={settings.printerPaperSize}
-                    />
-                    <InfoRow
-                      label="จำนวนชุดที่พิมพ์"
-                      value={`${settings.copyCount} ชุด`}
-                    />
-                    <InfoRow
-                      label="เงินสด"
-                      value={settings.enableCash ? "เปิดใช้งาน" : "ปิดใช้งาน"}
-                    />
-                    <InfoRow
-                      label="โอนเงิน"
-                      value={
-                        settings.enableTransfer ? "เปิดใช้งาน" : "ปิดใช้งาน"
-                      }
-                    />
-                    <InfoRow
-                      label="พิมพ์อัตโนมัติ"
-                      value={
-                        settings.autoPrintReceipt ? "เปิดใช้งาน" : "ปิดใช้งาน"
-                      }
-                    />
-                    <InfoRow
-                      label="แสดงตัวอย่างก่อนพิมพ์"
-                      value={
-                        settings.showPrintPreview ? "เปิดใช้งาน" : "ปิดใช้งาน"
-                      }
-                    />
-                    <InfoRow
-                      label="เสียงแจ้งเตือน"
-                      value={
-                        settings.soundOnCheckout ? "เปิดใช้งาน" : "ปิดใช้งาน"
-                      }
-                    />
-                  </Stack>
-                </Paper>
-              </Box>
-            </CardContent>
-          </Card>
-
-          <Card
-            elevation={0}
-            sx={{
-              borderRadius: 5,
-              border: "1px solid #e5e7eb",
-            }}
-          >
             <CardContent sx={{ p: 3 }}>
-              <Typography fontWeight={800} color="#111827" mb={1.2}>
-                การจัดการข้อมูล
+              <Typography fontSize={22} fontWeight={900} color="#111827" mb={1}>
+                สรุปการตั้งค่า
               </Typography>
 
               <Typography variant="body2" color="text.secondary" mb={2}>
                 การตั้งค่าหน้านี้จะถูกบันทึกไว้ในเครื่องนี้
                 เหมาะสำหรับใช้งานแบบออฟไลน์บนโปรแกรมเดสก์ท็อป
               </Typography>
+
+              <Paper
+                elevation={0}
+                sx={{
+                  p: 2,
+                  mb: 2,
+                  borderRadius: 4,
+                  border: "1px solid #e5e7eb",
+                  background: "#fafafa",
+                }}
+              >
+                <Stack spacing={1.2}>
+                  <SummaryRow label="ชื่อร้าน" value={settings.shopName || "-"} />
+                  <SummaryRow
+                    label="ขนาดกระดาษ"
+                    value={settings.printerPaperSize}
+                  />
+                  <SummaryRow
+                    label="จำนวนชุดที่พิมพ์"
+                    value={`${settings.copyCount} ชุด`}
+                  />
+                  <SummaryRow
+                    label="เงินสด"
+                    value={settings.enableCash ? "เปิดใช้งาน" : "ปิดใช้งาน"}
+                  />
+                  <SummaryRow
+                    label="โอนเงิน"
+                    value={settings.enableTransfer ? "เปิดใช้งาน" : "ปิดใช้งาน"}
+                  />
+                  <SummaryRow
+                    label="พร้อมเพย์"
+                    value={settings.promptPayId || "-"}
+                  />
+                </Stack>
+              </Paper>
 
               <Stack direction={{ xs: "column", sm: "row" }} spacing={1.2}>
                 <Button
@@ -623,6 +603,7 @@ export default function Settings() {
                   size="large"
                   startIcon={<SaveRoundedIcon />}
                   onClick={saveSettings}
+                  disabled={isLoading || isSaving}
                   sx={{
                     borderRadius: 4,
                     py: 1.4,
@@ -637,7 +618,7 @@ export default function Settings() {
                     },
                   }}
                 >
-                  บันทึกการตั้งค่า
+                  {isSaving ? "กำลังบันทึก..." : "บันทึกการตั้งค่า"}
                 </Button>
 
                 <Button
@@ -646,6 +627,7 @@ export default function Settings() {
                   size="large"
                   startIcon={<RestartAltRoundedIcon />}
                   onClick={resetSettings}
+                  disabled={isLoading || isSaving}
                   sx={{
                     borderRadius: 4,
                     py: 1.4,
@@ -721,15 +703,15 @@ function SectionHeader({
               width: 42,
               height: 42,
               borderRadius: 3,
-              bgcolor: "#f3f4f6",
-              color: "#374151",
+              bgcolor: "#111827",
+              color: "#fff",
             }}
           >
             {icon}
           </Avatar>
 
           <Box>
-            <Typography fontSize={18} fontWeight={800} color="#111827">
+            <Typography fontWeight={900} color="#111827">
               {title}
             </Typography>
             <Typography variant="body2" color="text.secondary">
@@ -739,16 +721,16 @@ function SectionHeader({
         </Stack>
       </Box>
 
-      <Divider />
+      <Divider sx={{ borderColor: "#eef2f7" }} />
     </>
   );
 }
 
-function InfoRow({ label, value }: { label: string; value: string }) {
+function SummaryRow({ label, value }: { label: string; value: string }) {
   return (
-    <Stack direction="row" justifyContent="space-between" spacing={2}>
+    <Stack direction="row" justifyContent="space-between" spacing={1.5}>
       <Typography color="text.secondary">{label}</Typography>
-      <Typography fontWeight={700} color="#111827" textAlign="right">
+      <Typography fontWeight={800} color="#111827" textAlign="right">
         {value}
       </Typography>
     </Stack>
@@ -757,7 +739,7 @@ function InfoRow({ label, value }: { label: string; value: string }) {
 
 const inputSx = {
   "& .MuiOutlinedInput-root": {
-    borderRadius: 4,
-    backgroundColor: "#fff",
+    borderRadius: 3.5,
+    background: "#fff",
   },
 };
