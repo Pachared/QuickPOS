@@ -2,6 +2,7 @@ import { app, BrowserWindow } from "electron";
 import path from "path";
 import { registerProductIpc } from "./ipc/products";
 import { registerOrderIpc } from "./ipc/orders";
+import { registerSettingsIpc } from "./ipc/settings";
 import "./database/sqlite";
 
 let mainWindow: BrowserWindow | null = null;
@@ -32,6 +33,7 @@ function createWindow() {
 app.whenReady().then(() => {
   registerProductIpc();
   registerOrderIpc();
+  registerSettingsIpc();
   createWindow();
 
   app.on("activate", () => {

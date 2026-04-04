@@ -75,6 +75,34 @@ export interface ProductInput {
   status: ProductStatus;
 }
 
+export interface PosSettingsRow {
+  shopName: string;
+  receiptFooter: string;
+  receiptHeaderNote: string;
+  printerPaperSize: "58mm" | "80mm";
+  copyCount: number;
+  promptPayId: string;
+  enableCash: boolean;
+  enableTransfer: boolean;
+  autoPrintReceipt: boolean;
+  showPrintPreview: boolean;
+  soundOnCheckout: boolean;
+}
+
+export const defaultPosSettings: PosSettingsRow = {
+  shopName: "QuickPOS Store",
+  receiptFooter: "ขอบคุณที่ใช้บริการ",
+  receiptHeaderNote: "ใบเสร็จรับเงิน / ใบกำกับอย่างย่อ",
+  printerPaperSize: "80mm",
+  copyCount: 1,
+  promptPayId: "",
+  enableCash: true,
+  enableTransfer: true,
+  autoPrintReceipt: false,
+  showPrintPreview: true,
+  soundOnCheckout: true,
+};
+
 let dbInstance: Database.Database | null = null;
 
 function ensureDb() {
@@ -136,12 +164,76 @@ function ensureDb() {
       FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE RESTRICT
     );
 
+    CREATE TABLE IF NOT EXISTS pos_settings (
+      id INTEGER PRIMARY KEY CHECK (id = 1),
+      shop_name TEXT NOT NULL DEFAULT 'QuickPOS Store',
+      receipt_footer TEXT NOT NULL DEFAULT 'ขอบคุณที่ใช้บริการ',
+      receipt_header_note TEXT NOT NULL DEFAULT 'ใบเสร็จรับเงิน / ใบกำกับอย่างย่อ',
+      printer_paper_size TEXT NOT NULL DEFAULT '80mm',
+      copy_count INTEGER NOT NULL DEFAULT 1,
+      promptpay_id TEXT NOT NULL DEFAULT '',
+      enable_cash INTEGER NOT NULL DEFAULT 1,
+      enable_transfer INTEGER NOT NULL DEFAULT 1,
+      auto_print_receipt INTEGER NOT NULL DEFAULT 0,
+      show_print_preview INTEGER NOT NULL DEFAULT 1,
+      sound_on_checkout INTEGER NOT NULL DEFAULT 1,
+      updated_at TEXT NOT NULL
+    );
+
     CREATE INDEX IF NOT EXISTS idx_products_barcode ON products(barcode);
     CREATE INDEX IF NOT EXISTS idx_products_sku ON products(sku);
     CREATE INDEX IF NOT EXISTS idx_orders_order_date ON orders(order_date);
     CREATE INDEX IF NOT EXISTS idx_order_items_order_id ON order_items(order_id);
     CREATE INDEX IF NOT EXISTS idx_order_items_product_id ON order_items(product_id);
   `);
+
+  db.prepare(
+    `
+    INSERT OR IGNORE INTO pos_settings (
+      id,
+      shop_name,
+      receipt_footer,
+      receipt_header_note,
+      printer_paper_size,
+      copy_count,
+      promptpay_id,
+      enable_cash,
+      enable_transfer,
+      auto_print_receipt,
+      show_print_preview,
+      sound_on_checkout,
+      updated_at
+    )
+    VALUES (
+      1,
+      @shopName,
+      @receiptFooter,
+      @receiptHeaderNote,
+      @printerPaperSize,
+      @copyCount,
+      @promptPayId,
+      @enableCash,
+      @enableTransfer,
+      @autoPrintReceipt,
+      @showPrintPreview,
+      @soundOnCheckout,
+      @updatedAt
+    )
+    `
+  ).run({
+    shopName: defaultPosSettings.shopName,
+    receiptFooter: defaultPosSettings.receiptFooter,
+    receiptHeaderNote: defaultPosSettings.receiptHeaderNote,
+    printerPaperSize: defaultPosSettings.printerPaperSize,
+    copyCount: defaultPosSettings.copyCount,
+    promptPayId: defaultPosSettings.promptPayId,
+    enableCash: defaultPosSettings.enableCash ? 1 : 0,
+    enableTransfer: defaultPosSettings.enableTransfer ? 1 : 0,
+    autoPrintReceipt: defaultPosSettings.autoPrintReceipt ? 1 : 0,
+    showPrintPreview: defaultPosSettings.showPrintPreview ? 1 : 0,
+    soundOnCheckout: defaultPosSettings.soundOnCheckout ? 1 : 0,
+    updatedAt: new Date().toISOString(),
+  });
 
   dbInstance = db;
   return db;
@@ -169,6 +261,32 @@ function mapProduct(row: any): ProductRow {
     status: row.status === "inactive" ? "inactive" : "active",
     createdAt: String(row.created_at),
     updatedAt: String(row.updated_at),
+  };
+}
+
+function mapPosSettings(row: any): PosSettingsRow {
+  return {
+    shopName: String(row.shop_name || defaultPosSettings.shopName),
+    receiptFooter: String(
+      row.receipt_footer || defaultPosSettings.receiptFooter
+    ),
+    receiptHeaderNote: String(
+      row.receipt_header_note || defaultPosSettings.receiptHeaderNote
+    ),
+    printerPaperSize: row.printer_paper_size === "58mm" ? "58mm" : "80mm",
+    copyCount: Math.max(1, Number(row.copy_count || 1)),
+    promptPayId: String(row.promptpay_id || ""),
+    enableCash: Boolean(row.enable_cash),
+    enableTransfer: Boolean(row.enable_transfer),
+    autoPrintReceipt: Boolean(row.auto_print_receipt),
+    showPrintPreview:
+      row.show_print_preview === undefined
+        ? true
+        : Boolean(row.show_print_preview),
+    soundOnCheckout:
+      row.sound_on_checkout === undefined
+        ? true
+        : Boolean(row.sound_on_checkout),
   };
 }
 
@@ -593,4 +711,72 @@ export function listOrders(): OrderRow[] {
       })),
     } satisfies OrderRow;
   });
+}
+
+export function getPosSettings(): PosSettingsRow {
+  const db = getDb();
+  const row = db
+    .prepare(
+      `
+      SELECT *
+      FROM pos_settings
+      WHERE id = 1
+      LIMIT 1
+      `
+    )
+    .get() as any;
+
+  if (!row) {
+    return defaultPosSettings;
+  }
+
+  return mapPosSettings(row);
+}
+
+export function savePosSettings(input: PosSettingsRow): PosSettingsRow {
+  const db = getDb();
+  const now = new Date().toISOString();
+
+  db.prepare(
+    `
+    UPDATE pos_settings
+    SET
+      shop_name = @shopName,
+      receipt_footer = @receiptFooter,
+      receipt_header_note = @receiptHeaderNote,
+      printer_paper_size = @printerPaperSize,
+      copy_count = @copyCount,
+      promptpay_id = @promptPayId,
+      enable_cash = @enableCash,
+      enable_transfer = @enableTransfer,
+      auto_print_receipt = @autoPrintReceipt,
+      show_print_preview = @showPrintPreview,
+      sound_on_checkout = @soundOnCheckout,
+      updated_at = @updatedAt
+    WHERE id = 1
+    `
+  ).run({
+    shopName: String(input.shopName || "").trim() || defaultPosSettings.shopName,
+    receiptFooter:
+      String(input.receiptFooter || "").trim() ||
+      defaultPosSettings.receiptFooter,
+    receiptHeaderNote:
+      String(input.receiptHeaderNote || "").trim() ||
+      defaultPosSettings.receiptHeaderNote,
+    printerPaperSize: input.printerPaperSize === "58mm" ? "58mm" : "80mm",
+    copyCount: Math.min(3, Math.max(1, Number(input.copyCount || 1))),
+    promptPayId: String(input.promptPayId || "").trim(),
+    enableCash: input.enableCash ? 1 : 0,
+    enableTransfer: input.enableTransfer ? 1 : 0,
+    autoPrintReceipt: input.autoPrintReceipt ? 1 : 0,
+    showPrintPreview: input.showPrintPreview ? 1 : 0,
+    soundOnCheckout: input.soundOnCheckout ? 1 : 0,
+    updatedAt: now,
+  });
+
+  return getPosSettings();
+}
+
+export function resetPosSettings(): PosSettingsRow {
+  return savePosSettings(defaultPosSettings);
 }

@@ -12,4 +12,8 @@ contextBridge.exposeInMainWorld("pos", {
 
   listOrders: () => ipcRenderer.invoke("orders:list"),
   createOrder: (payload: any) => ipcRenderer.invoke("orders:create", payload),
+
+  getSettings: () => ipcRenderer.invoke("settings:get"),
+  saveSettings: (payload: any) => ipcRenderer.invoke("settings:save", payload),
+  resetSettings: () => ipcRenderer.invoke("settings:reset"),
 });
