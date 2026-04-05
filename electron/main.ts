@@ -3,6 +3,7 @@ import path from "path";
 import { registerProductIpc } from "./ipc/products";
 import { registerOrderIpc } from "./ipc/orders";
 import { registerSettingsIpc } from "./ipc/settings";
+import { registerCustomerDisplayIpc } from "./ipc/customerDisplay";
 import "./database/sqlite";
 
 let mainWindow: BrowserWindow | null = null;
@@ -34,6 +35,7 @@ app.whenReady().then(() => {
   registerProductIpc();
   registerOrderIpc();
   registerSettingsIpc();
+  registerCustomerDisplayIpc();
   createWindow();
 
   app.on("activate", () => {

@@ -16,4 +16,10 @@ contextBridge.exposeInMainWorld("pos", {
   getSettings: () => ipcRenderer.invoke("settings:get"),
   saveSettings: (payload: any) => ipcRenderer.invoke("settings:save", payload),
   resetSettings: () => ipcRenderer.invoke("settings:reset"),
+
+  openCustomerDisplay: (payload: any) =>
+    ipcRenderer.invoke("customer-display:open", payload),
+  updateCustomerDisplay: (payload: any) =>
+    ipcRenderer.invoke("customer-display:update", payload),
+  closeCustomerDisplay: () => ipcRenderer.invoke("customer-display:close"),
 });

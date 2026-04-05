@@ -12,4 +12,7 @@ electron_1.contextBridge.exposeInMainWorld("pos", {
     getSettings: () => electron_1.ipcRenderer.invoke("settings:get"),
     saveSettings: (payload) => electron_1.ipcRenderer.invoke("settings:save", payload),
     resetSettings: () => electron_1.ipcRenderer.invoke("settings:reset"),
+    openCustomerDisplay: (payload) => electron_1.ipcRenderer.invoke("customer-display:open", payload),
+    updateCustomerDisplay: (payload) => electron_1.ipcRenderer.invoke("customer-display:update", payload),
+    closeCustomerDisplay: () => electron_1.ipcRenderer.invoke("customer-display:close"),
 });

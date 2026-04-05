@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="th">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Customer Display</title>
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self' data: 'unsafe-inline'; img-src 'self' data:;"
+    />
+    <style>
+      * {
+        box-sizing: border-box;
+      }
+
+      html,
+      body {
+        margin: 0;
+        width: 100%;
+        height: 100%;
+        font-family: Arial, Helvetica, sans-serif;
+        background: linear-gradient(
+          135deg,
+          #020617 0%,
+          #0f172a 45%,
+          #111827 100%
+        );
+        color: #fff;
+        overflow: hidden;
+      }
+
+      .wrap {
+        width: 100%;
+        height: 100%;
+        display: grid;
+        grid-template-columns: 1.1fr 0.9fr;
+        gap: 24px;
+        padding: 28px;
+      }
+
+      .left,
+      .right {
+        border-radius: 28px;
+        overflow: hidden;
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        background: rgba(255, 255, 255, 0.05);
+        backdrop-filter: blur(14px);
+      }
+
+      .left {
+        display: flex;
+        flex-direction: column;
+        padding: 28px;
+      }
+
+      .brand {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        margin-bottom: 24px;
+      }
+
+      .brand-badge {
+        width: 72px;
+        height: 72px;
+        border-radius: 22px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 32px;
+        background: rgba(255, 255, 255, 0.1);
+      }
+
+      .shop-name {
+        font-size: 38px;
+        font-weight: 900;
+        line-height: 1.1;
+      }
+
+      .subtitle {
+        font-size: 18px;
+        color: rgba(255, 255, 255, 0.7);
+        margin-top: 6px;
+      }
+
+      .receipt-box {
+        margin-top: 8px;
+        margin-bottom: 20px;
+        padding: 18px 20px;
+        border-radius: 20px;
+        background: rgba(255, 255, 255, 0.07);
+      }
+
+      .receipt-label {
+        font-size: 14px;
+        color: rgba(255, 255, 255, 0.65);
+      }
+
+      .receipt-no {
+        margin-top: 6px;
+        font-size: 24px;
+        font-weight: 800;
+      }
+
+      .headline {
+        font-size: 28px;
+        font-weight: 900;
+        margin: 0 0 12px;
+      }
+
+      .desc {
+        font-size: 18px;
+        color: rgba(255, 255, 255, 0.76);
+        margin-bottom: 24px;
+      }
+
+      .amount-card {
+        margin-top: auto;
+        padding: 24px;
+        border-radius: 24px;
+        background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+        color: #fff;
+      }
+
+      .amount-label {
+        font-size: 20px;
+        opacity: 0.92;
+      }
+
+      .amount-value {
+        margin-top: 10px;
+        font-size: 72px;
+        font-weight: 900;
+        line-height: 1;
+      }
+
+      .hint {
+        margin-top: 14px;
+        font-size: 20px;
+        opacity: 0.95;
+      }
+
+      .right {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 28px;
+      }
+
+      .qr-panel {
+        width: 100%;
+        max-width: 620px;
+        border-radius: 28px;
+        background: #fff;
+        color: #111827;
+        padding: 28px;
+        text-align: center;
+        box-shadow: 0 24px 70px rgba(0, 0, 0, 0.28);
+      }
+
+      .qr-title {
+        font-size: 34px;
+        font-weight: 900;
+        margin-bottom: 8px;
+      }
+
+      .qr-subtitle {
+        font-size: 18px;
+        color: #6b7280;
+        margin-bottom: 20px;
+      }
+
+      .qr-image-wrap {
+        width: 100%;
+        aspect-ratio: 1 / 1;
+        border-radius: 24px;
+        border: 1px solid #e5e7eb;
+        background: #f8fafc;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        overflow: hidden;
+      }
+
+      .qr-image {
+        width: 100%;
+        height: 100%;
+        object-fit: contain;
+        padding: 18px;
+      }
+
+      .qr-empty {
+        color: #6b7280;
+        font-size: 22px;
+        font-weight: 800;
+      }
+
+      .meta {
+        margin-top: 20px;
+        text-align: left;
+        display: grid;
+        gap: 12px;
+      }
+
+      .meta-row {
+        display: flex;
+        justify-content: space-between;
+        gap: 16px;
+        font-size: 18px;
+      }
+
+      .meta-label {
+        color: #6b7280;
+      }
+
+      .meta-value {
+        font-weight: 800;
+        color: #111827;
+        text-align: right;
+      }
+
+      .full-center {
+        width: 100%;
+        height: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+        padding: 40px;
+      }
+
+      .waiting-box {
+        max-width: 760px;
+      }
+
+      .waiting-title {
+        font-size: 52px;
+        font-weight: 900;
+      }
+
+      .waiting-desc {
+        margin-top: 12px;
+        font-size: 24px;
+        color: rgba(255, 255, 255, 0.72);
+      }
+    </style>
+  </head>
+  <body>
+    <div id="app"></div>
+
+    <script>
+      function formatCurrency(value) {
+        try {
+          return (
+            new Intl.NumberFormat("th-TH", {
+              minimumFractionDigits: 2,
+              maximumFractionDigits: 2,
+            }).format(Number(value || 0)) + " บาท"
+          );
+        } catch {
+          return `${Number(value || 0).toFixed(2)} บาท`;
+        }
+      }
+
+      function renderWaiting() {
+        document.getElementById("app").innerHTML = `
+          <div class="full-center">
+            <div class="waiting-box">
+              <div class="waiting-title">พร้อมรับการชำระเงิน</div>
+              <div class="waiting-desc">หน้าจอนี้จะแสดง QR สำหรับลูกค้าเมื่อเลือกชำระแบบโอนเงิน</div>
+            </div>
+          </div>
+        `;
+      }
+
+      function renderTransfer(state) {
+        const qr = state.qrDataUrl
+          ? `<img class="qr-image" src="${state.qrDataUrl}" alt="PromptPay QR" />`
+          : `<div class="qr-empty">กำลังสร้าง QR</div>`;
+
+        document.getElementById("app").innerHTML = `
+          <div class="wrap">
+            <div class="left">
+              <div class="brand">
+                <div class="brand-badge">฿</div>
+                <div>
+                  <div class="shop-name">${state.shopName || "-"}</div>
+                  <div class="subtitle">${
+                    state.receiptHeaderNote || "สแกนเพื่อชำระเงิน"
+                  }</div>
+                </div>
+              </div>
+
+              <div class="receipt-box">
+                <div class="receipt-label">เลขที่ใบเสร็จ</div>
+                <div class="receipt-no">${state.receiptNo || "-"}</div>
+              </div>
+
+              <div class="headline">ชำระเงินด้วยพร้อมเพย์</div>
+              <div class="desc">กรุณาใช้แอปธนาคารสแกน QR ทางด้านขวา</div>
+
+              <div class="amount-card">
+                <div class="amount-label">ยอดชำระ</div>
+                <div class="amount-value">${formatCurrency(state.total)}</div>
+                <div class="hint">เมื่อชำระเรียบร้อย เจ้าหน้าที่จะดำเนินการต่อให้ทันที</div>
+              </div>
+            </div>
+
+            <div class="right">
+              <div class="qr-panel">
+                <div class="qr-title">PromptPay QR</div>
+                <div class="qr-subtitle">สแกนจ่ายตามยอดที่แสดง</div>
+
+                <div class="qr-image-wrap">
+                  ${qr}
+                </div>
+
+                <div class="meta">
+                  <div class="meta-row">
+                    <div class="meta-label">ชื่อร้าน</div>
+                    <div class="meta-value">${state.shopName || "-"}</div>
+                  </div>
+                  <div class="meta-row">
+                    <div class="meta-label">พร้อมเพย์</div>
+                    <div class="meta-value">${state.promptPayId || "-"}</div>
+                  </div>
+                  <div class="meta-row">
+                    <div class="meta-label">ยอดชำระ</div>
+                    <div class="meta-value">${formatCurrency(state.total)}</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        `;
+      }
+
+      function renderState(state) {
+        if (!state || state.mode !== "transfer") {
+          renderWaiting();
+          return;
+        }
+
+        renderTransfer(state);
+      }
+
+      renderWaiting();
+
+      window.customerDisplay.onStateChange((state) => {
+        renderState(state);
+      });
+    </script>
+  </body>
+</html>

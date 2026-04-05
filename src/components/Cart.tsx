@@ -42,6 +42,7 @@ import type {
   OrderItem,
   PaymentMethod,
   PosSettings,
+  CustomerDisplayPayload,
 } from "../types/pos";
 import { formatCurrency } from "../utils/format";
 
@@ -200,6 +201,53 @@ export default function Cart({
     }
   };
 
+  const buildCustomerDisplayPayload = (
+    state?: Partial<CustomerDisplayPayload>
+  ): CustomerDisplayPayload => {
+    return {
+      mode: "transfer",
+      shopName: settings.shopName,
+      receiptHeaderNote: settings.receiptHeaderNote,
+      receiptNo,
+      promptPayId: settings.promptPayId,
+      total,
+      qrDataUrl,
+      ...state,
+    };
+  };
+
+  const openTransferCustomerDisplay = async (
+    override?: Partial<CustomerDisplayPayload>
+  ) => {
+    try {
+      await window.pos.openCustomerDisplay(
+        buildCustomerDisplayPayload(override)
+      );
+    } catch (error) {
+      console.error("เปิดหน้าจอลูกค้าไม่สำเร็จ:", error);
+    }
+  };
+
+  const updateTransferCustomerDisplay = async (
+    override?: Partial<CustomerDisplayPayload>
+  ) => {
+    try {
+      await window.pos.updateCustomerDisplay(
+        buildCustomerDisplayPayload(override)
+      );
+    } catch (error) {
+      console.error("อัปเดตหน้าจอลูกค้าไม่สำเร็จ:", error);
+    }
+  };
+
+  const closeCustomerDisplay = async () => {
+    try {
+      await window.pos.closeCustomerDisplay();
+    } catch (error) {
+      console.error("ปิดหน้าจอลูกค้าไม่สำเร็จ:", error);
+    }
+  };
+
   useEffect(() => {
     void loadSettings();
   }, []);
@@ -252,6 +300,40 @@ export default function Cart({
 
     void generateQr();
   }, [openCheckout, paymentMethod, total, settings.promptPayId]);
+
+  useEffect(() => {
+    if (!openCheckout) {
+      void closeCustomerDisplay();
+      return;
+    }
+
+    if (paymentMethod === "transfer" && settings.enableTransfer) {
+      void openTransferCustomerDisplay();
+      return;
+    }
+
+    void closeCustomerDisplay();
+  }, [openCheckout, paymentMethod, settings.enableTransfer]);
+
+  useEffect(() => {
+    if (!openCheckout || paymentMethod !== "transfer") return;
+    void updateTransferCustomerDisplay();
+  }, [
+    qrDataUrl,
+    receiptNo,
+    total,
+    settings.shopName,
+    settings.receiptHeaderNote,
+    settings.promptPayId,
+    paymentMethod,
+    openCheckout,
+  ]);
+
+  useEffect(() => {
+    return () => {
+      void closeCustomerDisplay();
+    };
+  }, []);
 
   const addCash = (value: number) => {
     setCashCounts((prev) => ({
@@ -337,6 +419,7 @@ export default function Cart({
   const handleCloseCheckout = () => {
     setOpenCheckout(false);
     resetCheckoutState();
+    void closeCustomerDisplay();
   };
 
   const playSuccessBeep = async () => {
@@ -612,6 +695,7 @@ export default function Cart({
 
       setPaid(true);
       await playSuccessBeep();
+      await closeCustomerDisplay();
 
       if (settings.autoPrintReceipt) {
         setTimeout(() => {
@@ -1261,7 +1345,7 @@ export default function Cart({
                     พร้อมเพย์
                   </Typography>
                   <Typography color="text.secondary" mt={0.5}>
-                    สแกนเพื่อชำระเงินตามยอดด้านล่าง
+                    หน้าจอลูกค้าจะแสดง QR เต็มจอที่อีกจออัตโนมัติ
                   </Typography>
 
                   <Paper
@@ -1357,7 +1441,9 @@ export default function Cart({
                   fontWeight={900}
                   color={summaryTone.secondary}
                 >
-                  {formatCurrency(paymentMethod === "cash" ? Math.max(change, 0) : 0)}
+                  {formatCurrency(
+                    paymentMethod === "cash" ? Math.max(change, 0) : 0
+                  )}
                 </Typography>
               </Stack>
             </Paper>
