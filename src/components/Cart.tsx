@@ -39,7 +39,7 @@ import RestartAltRoundedIcon from "@mui/icons-material/RestartAltRounded";
 import type {
   CartItem,
   Order,
-  OrderItem,
+  OrderCreatePayload,
   PaymentMethod,
   PosSettings,
   CustomerDisplayPayload,
@@ -671,23 +671,21 @@ export default function Cart({
     try {
       setIsSavingOrder(true);
 
-      const payload = {
+      const payload: OrderCreatePayload = {
         date: new Date().toLocaleString("sv-SE").replace("T", " ").slice(0, 16),
         items: totalQty,
         total,
         paymentMethod,
         receivedAmount: paymentMethod === "cash" ? received : total,
         change: paymentMethod === "cash" ? Math.max(change, 0) : 0,
-        products: cart.map(
-          (item): OrderItem => ({
-            id: Number(item.id),
-            name: item.name,
-            qty: item.qty,
-            price: Number(item.price),
-          })
-        ),
+        products: cart.map((item) => ({
+          id: Number(item.id),
+          name: item.name,
+          qty: item.qty,
+          price: Number(item.price),
+        })),
       };
-
+      
       const createdOrder = await window.pos.createOrder(payload);
 
       setSavedOrder(createdOrder);
