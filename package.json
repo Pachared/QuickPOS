@@ -7,6 +7,7 @@
     "dev": "concurrently \"vite\" \"tsc -p electron --watch\" \"wait-on http://localhost:5173 && electron dist-electron/main.js\"",
     "build:electron": "tsc -p electron",
     "build": "npm run build:electron && vite build",
+    "copy:customer-display": "node -e \"require('fs').copyFileSync('electron/customer-display.html','dist-electron/customer-display.html')\"",
     "dist": "npm run build && electron-builder"
   },
   "dependencies": {
