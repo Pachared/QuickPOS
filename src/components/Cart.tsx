@@ -282,7 +282,9 @@ export default function Cart({
 
       try {
         setIsGeneratingQr(true);
-        const payload = generatePayload(settings.promptPayId, { amount: total });
+        const payload = generatePayload(settings.promptPayId, {
+          amount: total,
+        });
         const dataUrl = await QRCode.toDataURL(payload, {
           width: 280,
           margin: 1,
@@ -685,7 +687,7 @@ export default function Cart({
           price: Number(item.price),
         })),
       };
-      
+
       const createdOrder = await window.pos.createOrder(payload);
 
       setSavedOrder(createdOrder);
@@ -989,11 +991,24 @@ export default function Cart({
         maxWidth="sm"
         keepMounted
         TransitionComponent={SlideDownTransition}
+        BackdropProps={{
+          timeout: 280,
+          sx: {
+            background:
+              "linear-gradient(180deg, rgba(2,6,23,0.34) 0%, rgba(15,23,42,0.46) 100%)",
+            backdropFilter: "blur(14px) saturate(125%)",
+            WebkitBackdropFilter: "blur(14px) saturate(125%)",
+          },
+        }}
         PaperProps={{
           sx: {
             borderRadius: 6,
             overflow: "hidden",
-            boxShadow: "0 30px 80px rgba(15, 23, 42, 0.22)",
+            background: "rgba(255,255,255,0.88)",
+            backdropFilter: "blur(18px)",
+            WebkitBackdropFilter: "blur(18px)",
+            border: "1px solid rgba(255,255,255,0.55)",
+            boxShadow: "0 32px 90px rgba(15, 23, 42, 0.30)",
           },
         }}
       >
@@ -1002,8 +1017,11 @@ export default function Cart({
             px: 3,
             py: 2.5,
             background:
-              "linear-gradient(135deg, #111827 0%, #1f2937 55%, #374151 100%)",
+              "linear-gradient(135deg, rgba(17,24,39,0.96) 0%, rgba(31,41,55,0.94) 55%, rgba(55,65,81,0.92) 100%)",
             color: "#fff",
+            borderBottom: "1px solid rgba(255,255,255,0.08)",
+            backdropFilter: "blur(10px)",
+            WebkitBackdropFilter: "blur(10px)",
           }}
         >
           <Stack direction="row" spacing={1.5} alignItems="center">
@@ -1014,6 +1032,7 @@ export default function Cart({
                 borderRadius: 3,
                 bgcolor: "rgba(255,255,255,0.14)",
                 border: "1px solid rgba(255,255,255,0.12)",
+                boxShadow: "inset 0 1px 0 rgba(255,255,255,0.08)",
               }}
             >
               <PointOfSaleRoundedIcon />
@@ -1030,7 +1049,15 @@ export default function Cart({
           </Stack>
         </DialogTitle>
 
-        <DialogContent sx={{ p: 3, background: "#f8fafc" }}>
+        <DialogContent
+          sx={{
+            p: 3,
+            background:
+              "linear-gradient(180deg, rgba(248,250,252,0.72) 0%, rgba(255,255,255,0.82) 100%)",
+            backdropFilter: "blur(10px)",
+            WebkitBackdropFilter: "blur(10px)",
+          }}
+        >
           <ToggleButtonGroup
             exclusive
             fullWidth
@@ -1058,7 +1085,9 @@ export default function Cart({
                 textTransform: "none",
                 fontWeight: 800,
                 color: "#374151",
-                background: "#fff",
+                background: "rgba(255,255,255,0.82)",
+                backdropFilter: "blur(10px)",
+                WebkitBackdropFilter: "blur(10px)",
               },
               "& .Mui-selected": {
                 background: "#111827 !important",
@@ -1087,6 +1116,7 @@ export default function Cart({
                   background:
                     "linear-gradient(135deg, #eef6ff 0%, #f8fbff 100%)",
                   border: "1px solid #dbeafe",
+                  boxShadow: "0 12px 24px rgba(59,130,246,0.08)",
                 }}
               >
                 <Stack direction="row" spacing={1.2} alignItems="center">
@@ -1133,7 +1163,9 @@ export default function Cart({
                       textTransform: "none",
                       color: "#111827",
                       background:
-                        "linear-gradient(180deg, #ffffff 0%, #f9fafb 100%)",
+                        "linear-gradient(180deg, rgba(255,255,255,0.94) 0%, rgba(249,250,251,0.92) 100%)",
+                      backdropFilter: "blur(8px)",
+                      WebkitBackdropFilter: "blur(8px)",
                       border: "1px solid #dbe2ea",
                       boxShadow: "0 10px 20px rgba(15, 23, 42, 0.06)",
                       display: "flex",
@@ -1218,6 +1250,9 @@ export default function Cart({
                     textTransform: "none",
                     borderColor: "#d1d5db",
                     color: "#111827",
+                    background: "rgba(255,255,255,0.72)",
+                    backdropFilter: "blur(8px)",
+                    WebkitBackdropFilter: "blur(8px)",
                     "&:hover": {
                       borderColor: "#9ca3af",
                       background: "#f9fafb",
@@ -1234,7 +1269,9 @@ export default function Cart({
                   p: 1.8,
                   borderRadius: 4,
                   border: "1px solid #e5e7eb",
-                  background: "#fff",
+                  background: "rgba(255,255,255,0.78)",
+                  backdropFilter: "blur(12px)",
+                  WebkitBackdropFilter: "blur(12px)",
                 }}
               >
                 <Typography fontWeight={800} mb={1.1}>
@@ -1276,7 +1313,9 @@ export default function Cart({
                 p: 2.2,
                 borderRadius: 4,
                 border: "1px solid #e5e7eb",
-                bgcolor: "#fff",
+                bgcolor: "rgba(255,255,255,0.78)",
+                backdropFilter: "blur(14px)",
+                WebkitBackdropFilter: "blur(14px)",
               }}
             >
               <Stack direction={{ xs: "column", sm: "row" }} spacing={2}>
@@ -1286,11 +1325,13 @@ export default function Cart({
                     minHeight: 280,
                     borderRadius: 4,
                     border: "1px solid #e5e7eb",
-                    bgcolor: "#fafafa",
+                    bgcolor: "rgba(250,250,250,0.9)",
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "center",
                     overflow: "hidden",
+                    backdropFilter: "blur(8px)",
+                    WebkitBackdropFilter: "blur(8px)",
                   }}
                 >
                   {isGeneratingQr ? (
@@ -1332,7 +1373,9 @@ export default function Cart({
                         <QrCode2RoundedIcon />
                       </Avatar>
                       <Typography fontWeight={800}>
-                        {settings.promptPayId ? "ไม่พบ QR" : "ยังไม่ได้ตั้งค่า PromptPay"}
+                        {settings.promptPayId
+                          ? "ไม่พบ QR"
+                          : "ยังไม่ได้ตั้งค่า PromptPay"}
                       </Typography>
                     </Stack>
                   )}
@@ -1353,7 +1396,9 @@ export default function Cart({
                       p: 1.8,
                       borderRadius: 4,
                       border: "1px solid #e5e7eb",
-                      bgcolor: "#f9fafb",
+                      bgcolor: "rgba(249,250,251,0.88)",
+                      backdropFilter: "blur(10px)",
+                      WebkitBackdropFilter: "blur(10px)",
                     }}
                   >
                     <Stack spacing={1}>
@@ -1393,7 +1438,11 @@ export default function Cart({
           sx={{
             p: 3,
             pt: 1,
-            background: "#f8fafc",
+            background:
+              "linear-gradient(180deg, rgba(248,250,252,0.74) 0%, rgba(255,255,255,0.84) 100%)",
+            backdropFilter: "blur(10px)",
+            WebkitBackdropFilter: "blur(10px)",
+            borderTop: "1px solid rgba(226,232,240,0.72)",
           }}
         >
           <Stack spacing={1.5} width="100%">
@@ -1406,6 +1455,7 @@ export default function Cart({
                 border: `1px solid ${summaryTone.border}`,
                 background: summaryTone.bg,
                 transition: "all 0.2s ease",
+                boxShadow: "0 10px 24px rgba(15, 23, 42, 0.06)",
               }}
             >
               <Stack direction="row" justifyContent="space-between" mb={1}>
@@ -1459,6 +1509,9 @@ export default function Cart({
                   textTransform: "none",
                   fontWeight: 800,
                   borderColor: "#d1d5db",
+                  background: "rgba(255,255,255,0.68)",
+                  backdropFilter: "blur(8px)",
+                  WebkitBackdropFilter: "blur(8px)",
                 }}
               >
                 ปิด
@@ -1497,7 +1550,8 @@ export default function Cart({
                     textTransform: "none",
                     fontWeight: 900,
                     boxShadow: "none",
-                    background: "linear-gradient(135deg, #111827 0%, #374151 100%)",
+                    background:
+                      "linear-gradient(135deg, #111827 0%, #374151 100%)",
                   }}
                 >
                   จบการขาย
