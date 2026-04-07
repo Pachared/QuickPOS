@@ -86,7 +86,13 @@ const statusOptions: Array<{ value: Product["status"]; label: string }> = [
 ];
 
 function SlideDownTransition(props: SlideProps) {
-  return <Slide {...props} direction="down" />;
+  return (
+    <Slide
+      {...props}
+      direction="down"
+      timeout={{ enter: 260, exit: 180 }}
+    />
+  );
 }
 
 export default function Products() {
@@ -152,7 +158,7 @@ export default function Products() {
   };
 
   useEffect(() => {
-    loadProducts();
+    void loadProducts();
     focusScanInput();
   }, []);
 
@@ -229,7 +235,7 @@ export default function Products() {
     }
 
     scanTimeoutRef.current = setTimeout(() => {
-      increaseStockByBarcode(trimmed, 1);
+      void increaseStockByBarcode(trimmed, 1);
     }, 150);
 
     return () => {
@@ -921,10 +927,29 @@ export default function Products() {
         onClose={saving ? undefined : closeForm}
         fullWidth
         maxWidth="md"
+        keepMounted
+        TransitionComponent={SlideDownTransition}
+        transitionDuration={{ appear: 260, enter: 260, exit: 180 }}
+        BackdropProps={{
+          timeout: 260,
+          sx: {
+            background:
+              "linear-gradient(180deg, rgba(2,6,23,0.25) 0%, rgba(15,23,42,0.40) 100%)",
+            backdropFilter: "blur(12px)",
+            WebkitBackdropFilter: "blur(12px)",
+          },
+        }}
         PaperProps={{
           sx: {
+            mt: { xs: 6, sm: 8, md: 10 },
+            alignSelf: "flex-start",
             borderRadius: 6,
             overflow: "hidden",
+            background: "rgba(255,255,255,0.90)",
+            backdropFilter: "blur(16px)",
+            WebkitBackdropFilter: "blur(16px)",
+            border: "1px solid rgba(255,255,255,0.5)",
+            boxShadow: "0 30px 80px rgba(15,23,42,0.25)",
           },
         }}
       >
@@ -934,14 +959,25 @@ export default function Products() {
             py: 2.5,
             fontWeight: 900,
             background:
-              "linear-gradient(135deg, #111827 0%, #1f2937 55%, #374151 100%)",
+              "linear-gradient(135deg, rgba(17,24,39,0.96) 0%, rgba(31,41,55,0.94) 55%, rgba(55,65,81,0.92) 100%)",
             color: "#fff",
+            borderBottom: "1px solid rgba(255,255,255,0.08)",
+            backdropFilter: "blur(10px)",
+            WebkitBackdropFilter: "blur(10px)",
           }}
         >
           {form.id === 0 ? "เพิ่มสินค้าใหม่" : "แก้ไขข้อมูลสินค้า"}
         </DialogTitle>
 
-        <DialogContent sx={{ p: 3 }}>
+        <DialogContent
+          sx={{
+            p: 3,
+            background:
+              "linear-gradient(180deg, rgba(248,250,252,0.72) 0%, rgba(255,255,255,0.85) 100%)",
+            backdropFilter: "blur(8px)",
+            WebkitBackdropFilter: "blur(8px)",
+          }}
+        >
           <Stack spacing={2.2} sx={{ mt: 1 }}>
             <Box
               sx={{
@@ -981,7 +1017,9 @@ export default function Products() {
                 p: 2,
                 borderRadius: 4,
                 border: "1px solid #e5e7eb",
-                background: "#fff",
+                background: "rgba(255,255,255,0.82)",
+                backdropFilter: "blur(10px)",
+                WebkitBackdropFilter: "blur(10px)",
               }}
             >
               <Stack direction="row" spacing={1} alignItems="center" mb={2}>
@@ -1078,7 +1116,9 @@ export default function Products() {
                 p: 2,
                 borderRadius: 4,
                 border: "1px solid #e5e7eb",
-                background: "#fff",
+                background: "rgba(255,255,255,0.82)",
+                backdropFilter: "blur(10px)",
+                WebkitBackdropFilter: "blur(10px)",
               }}
             >
               <Stack direction="row" spacing={1} alignItems="center" mb={2}>
@@ -1191,7 +1231,10 @@ export default function Products() {
                     label="สถานะสินค้า"
                     value={form.status}
                     onChange={(e) =>
-                      updateForm("status", e.target.value as Product["status"])
+                      updateForm(
+                        "status",
+                        e.target.value as Product["status"]
+                      )
                     }
                     fullWidth
                     sx={{ "& .MuiOutlinedInput-root": { borderRadius: 4 } }}
@@ -1211,7 +1254,9 @@ export default function Products() {
                 p: 2,
                 borderRadius: 4,
                 border: "1px solid #e5e7eb",
-                background: "#fff",
+                background: "rgba(255,255,255,0.82)",
+                backdropFilter: "blur(10px)",
+                WebkitBackdropFilter: "blur(10px)",
               }}
             >
               <Stack direction="row" spacing={1} alignItems="center" mb={2}>
@@ -1232,11 +1277,18 @@ export default function Products() {
               <Grid container spacing={2}>
                 <Grid size={{ xs: 12, md: 6 }}>
                   <TextField
-                    label="ผู้จำหน่าย"
+                    label="ซัพพลายเออร์"
                     value={form.supplier}
                     onChange={(e) => updateForm("supplier", e.target.value)}
                     fullWidth
                     sx={{ "& .MuiOutlinedInput-root": { borderRadius: 4 } }}
+                    InputProps={{
+                      startAdornment: (
+                        <InputAdornment position="start">
+                          <LocalShippingRoundedIcon sx={{ color: "#6b7280" }} />
+                        </InputAdornment>
+                      ),
+                    }}
                   />
                 </Grid>
 
@@ -1273,7 +1325,17 @@ export default function Products() {
           </Stack>
         </DialogContent>
 
-        <DialogActions sx={{ px: 3, py: 2.2, borderTop: "1px solid #f1f5f9" }}>
+        <DialogActions
+          sx={{
+            px: 3,
+            py: 2.2,
+            borderTop: "1px solid rgba(241,245,249,0.85)",
+            background:
+              "linear-gradient(180deg, rgba(248,250,252,0.70) 0%, rgba(255,255,255,0.84) 100%)",
+            backdropFilter: "blur(8px)",
+            WebkitBackdropFilter: "blur(8px)",
+          }}
+        >
           <Button
             onClick={closeForm}
             disabled={saving}
@@ -1305,6 +1367,7 @@ export default function Products() {
               textTransform: "none",
               fontWeight: 800,
               boxShadow: "none",
+              background: "linear-gradient(135deg, #111827 0%, #374151 100%)",
             }}
           >
             {saving
@@ -1321,13 +1384,31 @@ export default function Products() {
         onClose={closeDelete}
         fullWidth
         maxWidth="xs"
+        TransitionComponent={SlideDownTransition}
+        keepMounted
         PaperProps={{
           sx: {
+            mt: { xs: 8, sm: 10 },
+            alignSelf: "flex-start",
             borderRadius: 5,
+            overflow: "hidden",
+            background: "rgba(255,255,255,0.94)",
+            backdropFilter: "blur(14px)",
+            WebkitBackdropFilter: "blur(14px)",
+            border: "1px solid rgba(255,255,255,0.55)",
+          },
+        }}
+        BackdropProps={{
+          sx: {
+            background: "rgba(15,23,42,0.28)",
+            backdropFilter: "blur(10px)",
+            WebkitBackdropFilter: "blur(10px)",
           },
         }}
       >
-        <DialogTitle sx={{ fontWeight: 900 }}>ยืนยันการลบสินค้า</DialogTitle>
+        <DialogTitle sx={{ fontWeight: 900 }}>
+          ยืนยันการลบสินค้า
+        </DialogTitle>
 
         <DialogContent>
           <Stack direction="row" spacing={1.2} alignItems="flex-start">
@@ -1346,14 +1427,14 @@ export default function Products() {
               </Typography>
               <Typography variant="body2" color="text.secondary">
                 {selectedProduct
-                  ? `สินค้า "${selectedProduct.name}" จะถูกลบออกจากระบบ`
-                  : "รายการสินค้านี้จะถูกลบออกจากระบบ"}
+                  ? `สินค้า "${selectedProduct.name}" จะถูกลบออกจากระบบ และไม่สามารถกู้คืนได้`
+                  : "ข้อมูลสินค้านี้จะถูกลบออกจากระบบ"}
               </Typography>
             </Box>
           </Stack>
         </DialogContent>
 
-        <DialogActions sx={{ px: 3, pb: 2.2 }}>
+        <DialogActions sx={{ px: 3, py: 2.2 }}>
           <Button
             onClick={closeDelete}
             sx={{
@@ -1361,17 +1442,20 @@ export default function Products() {
               px: 2.2,
               textTransform: "none",
               fontWeight: 700,
+              color: "#475569",
             }}
           >
             ยกเลิก
           </Button>
+
           <Button
-            variant="contained"
             color="error"
+            variant="contained"
             onClick={confirmDelete}
+            startIcon={<DeleteOutlineRoundedIcon />}
             sx={{
               borderRadius: 3,
-              px: 2.4,
+              px: 2.5,
               textTransform: "none",
               fontWeight: 800,
               boxShadow: "none",
@@ -1393,12 +1477,7 @@ export default function Products() {
           onClose={handleCloseSnackbar}
           severity={snackbar.severity}
           variant="filled"
-          sx={{
-            width: "100%",
-            borderRadius: 3,
-            fontWeight: 700,
-            alignItems: "center",
-          }}
+          sx={{ width: "100%", borderRadius: 3 }}
         >
           {snackbar.message}
         </Alert>
