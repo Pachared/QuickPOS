@@ -16,9 +16,10 @@ import {
   DialogTitle,
   DialogContent,
   DialogActions,
-  Fade,
   Divider,
+  Slide,
 } from "@mui/material";
+import type { SlideProps } from "@mui/material";
 
 import ReceiptLongRoundedIcon from "@mui/icons-material/ReceiptLongRounded";
 import VisibilityRoundedIcon from "@mui/icons-material/VisibilityRounded";
@@ -45,6 +46,16 @@ function escapeHtml(value: string) {
     .replaceAll("'", "&#039;");
 }
 
+function SlideDownTransition(props: SlideProps) {
+  return (
+    <Slide
+      {...props}
+      direction="down"
+      timeout={{ enter: 260, exit: 180 }}
+    />
+  );
+}
+
 const summaryCardSx = {
   p: 2.2,
   borderRadius: 5,
@@ -68,10 +79,6 @@ export default function Orders({ orders }: OrdersProps) {
 
   const handleCloseDetail = () => {
     setOpenDetail(false);
-  };
-
-  const handleDetailExited = () => {
-    setSelectedOrder(null);
   };
 
   const receiptProductCount = useMemo(() => {
@@ -584,27 +591,35 @@ export default function Orders({ orders }: OrdersProps) {
         fullWidth
         maxWidth="md"
         keepMounted
-        closeAfterTransition
-        TransitionComponent={Fade}
-        TransitionProps={{
-          timeout: {
-            enter: 180,
-            exit: 160,
-          },
-          onExited: handleDetailExited,
-        }}
-        PaperProps={{
-          sx: {
-            borderRadius: 6,
-            overflow: "hidden",
-            boxShadow: "0 30px 80px rgba(15, 23, 42, 0.22)",
+        TransitionComponent={SlideDownTransition}
+        transitionDuration={{ appear: 260, enter: 260, exit: 180 }}
+        sx={{
+          "& .MuiDialog-container": {
+            justifyContent: "center",
+            alignItems: "flex-start",
+            pt: { xs: 6, sm: 8, md: 10 },
           },
         }}
         BackdropProps={{
-          timeout: 160,
+          timeout: 260,
           sx: {
-            backgroundColor: "rgba(15, 23, 42, 0.42)",
-            backdropFilter: "blur(4px)",
+            background:
+              "linear-gradient(180deg, rgba(2,6,23,0.25) 0%, rgba(15,23,42,0.40) 100%)",
+            backdropFilter: "blur(12px)",
+            WebkitBackdropFilter: "blur(12px)",
+          },
+        }}
+        PaperProps={{
+          sx: {
+            m: 0,
+            width: "100%",
+            borderRadius: 6,
+            overflow: "hidden",
+            background: "rgba(255,255,255,0.90)",
+            backdropFilter: "blur(16px)",
+            WebkitBackdropFilter: "blur(16px)",
+            border: "1px solid rgba(255,255,255,0.5)",
+            boxShadow: "0 30px 80px rgba(15,23,42,0.25)",
           },
         }}
       >
@@ -614,14 +629,25 @@ export default function Orders({ orders }: OrdersProps) {
             py: 2.5,
             fontWeight: 900,
             background:
-              "linear-gradient(135deg, #111827 0%, #1f2937 55%, #374151 100%)",
+              "linear-gradient(135deg, rgba(17,24,39,0.96) 0%, rgba(31,41,55,0.94) 55%, rgba(55,65,81,0.92) 100%)",
             color: "#fff",
+            borderBottom: "1px solid rgba(255,255,255,0.08)",
+            backdropFilter: "blur(10px)",
+            WebkitBackdropFilter: "blur(10px)",
           }}
         >
           รายละเอียดใบเสร็จ
         </DialogTitle>
 
-        <DialogContent sx={{ p: 3 }}>
+        <DialogContent
+          sx={{
+            p: 3,
+            background:
+              "linear-gradient(180deg, rgba(248,250,252,0.72) 0%, rgba(255,255,255,0.85) 100%)",
+            backdropFilter: "blur(8px)",
+            WebkitBackdropFilter: "blur(8px)",
+          }}
+        >
           {selectedOrder && (
             <Stack spacing={2.2} sx={{ mt: 1 }}>
               <Box
@@ -788,7 +814,18 @@ export default function Orders({ orders }: OrdersProps) {
           )}
         </DialogContent>
 
-        <DialogActions sx={{ px: 3, pb: 3, gap: 1 }}>
+        <DialogActions
+          sx={{
+            px: 3,
+            py: 2.2,
+            borderTop: "1px solid rgba(241,245,249,0.85)",
+            background:
+              "linear-gradient(180deg, rgba(248,250,252,0.70) 0%, rgba(255,255,255,0.84) 100%)",
+            backdropFilter: "blur(8px)",
+            WebkitBackdropFilter: "blur(8px)",
+            gap: 1,
+          }}
+        >
           <Button
             onClick={handleCloseDetail}
             sx={{
