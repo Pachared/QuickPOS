@@ -1,6 +1,4 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import generatePayload from "promptpay-qr";
-import QRCode from "qrcode";
 
 import {
   Drawer,
@@ -30,7 +28,6 @@ import ShoppingBagRoundedIcon from "@mui/icons-material/ShoppingBagRounded";
 import PaymentsRoundedIcon from "@mui/icons-material/PaymentsRounded";
 import AccountBalanceRoundedIcon from "@mui/icons-material/AccountBalanceRounded";
 import PrintRoundedIcon from "@mui/icons-material/PrintRounded";
-import QrCode2RoundedIcon from "@mui/icons-material/QrCode2Rounded";
 import PointOfSaleRoundedIcon from "@mui/icons-material/PointOfSaleRounded";
 import LocalAtmRoundedIcon from "@mui/icons-material/LocalAtmRounded";
 import AutoAwesomeRoundedIcon from "@mui/icons-material/AutoAwesomeRounded";
@@ -118,8 +115,6 @@ export default function Cart({
     1000: 0,
   });
 
-  const [qrDataUrl, setQrDataUrl] = useState("");
-  const [isGeneratingQr, setIsGeneratingQr] = useState(false);
   const [paid, setPaid] = useState(false);
   const [receiptNo, setReceiptNo] = useState("");
   const [isSavingOrder, setIsSavingOrder] = useState(false);
@@ -234,7 +229,7 @@ export default function Cart({
       receiptNo: previewReceiptNo,
       promptPayId: settings.promptPayId,
       total,
-      qrDataUrl,
+      qrDataUrl: "",
       ...state,
     };
   };
@@ -285,41 +280,6 @@ export default function Cart({
   }, [openCheckout]);
 
   useEffect(() => {
-    const generateQr = async () => {
-      if (!openCheckout || paymentMethod !== "transfer" || total <= 0) {
-        setQrDataUrl("");
-        return;
-      }
-
-      if (!settings.promptPayId) {
-        setQrDataUrl("");
-        return;
-      }
-
-      try {
-        setIsGeneratingQr(true);
-        const payload = generatePayload(settings.promptPayId, {
-          amount: total,
-        });
-        const dataUrl = await QRCode.toDataURL(payload, {
-          width: 280,
-          margin: 1,
-          errorCorrectionLevel: "M",
-        });
-        setQrDataUrl(dataUrl);
-      } catch (err) {
-        console.error("Generate QR failed:", err);
-        setQrDataUrl("");
-        showSnackbar("สร้าง QR ไม่สำเร็จ", "error");
-      } finally {
-        setIsGeneratingQr(false);
-      }
-    };
-
-    void generateQr();
-  }, [openCheckout, paymentMethod, total, settings.promptPayId]);
-
-  useEffect(() => {
     if (!openCheckout) {
       void closeCustomerDisplay();
       return;
@@ -337,7 +297,6 @@ export default function Cart({
     if (!openCheckout || paymentMethod !== "transfer") return;
     void updateTransferCustomerDisplay();
   }, [
-    qrDataUrl,
     previewReceiptNo,
     total,
     settings.shopName,
@@ -410,7 +369,6 @@ export default function Cart({
     }
 
     resetCash();
-    setQrDataUrl("");
     setPaid(false);
     setIsSavingOrder(false);
     setSavedOrder(null);
@@ -1288,9 +1246,9 @@ export default function Cart({
             <Box
               sx={{
                 mt: 0.5,
-                p: 2,
+                p: 2.2,
                 borderRadius: 4,
-                background: "rgba(255,255,255,0.82)",
+                background: "rgba(255,255,255,0.9)",
                 border: "1px solid #e5e7eb",
                 boxShadow: "0 12px 30px rgba(15,23,42,0.06)",
               }}
@@ -1305,13 +1263,15 @@ export default function Cart({
                     color: "#0891b2",
                   }}
                 >
-                  <QrCode2RoundedIcon />
+                  <AccountBalanceRoundedIcon />
                 </Avatar>
 
                 <Box textAlign="center">
-                  <Typography fontWeight={900}>ชำระผ่าน PromptPay</Typography>
+                  <Typography fontWeight={900} fontSize={18}>
+                    ชำระเงินผ่านบัญชี
+                  </Typography>
                   <Typography variant="body2" color="text.secondary">
-                    {settings.promptPayId || "ยังไม่ได้ตั้งค่า PromptPay"}
+                    กรุณาโอนเงินตามข้อมูลด้านล่าง
                   </Typography>
                 </Box>
 
@@ -1323,33 +1283,40 @@ export default function Cart({
                     borderRadius: 4,
                     border: "1px dashed #d1d5db",
                     background: "#fff",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    minHeight: 320,
                   }}
                 >
-                  {!settings.promptPayId ? (
-                    <Typography color="error.main" textAlign="center">
-                      กรุณาตั้งค่า PromptPay ในหน้า Settings ก่อน
+                  <Stack spacing={1}>
+                    <Stack direction="row" justifyContent="space-between">
+                      <Typography color="text.secondary">ชื่อร้าน</Typography>
+                      <Typography fontWeight={800}>
+                        {settings.shopName || "-"}
+                      </Typography>
+                    </Stack>
+
+                    <Stack direction="row" justifyContent="space-between">
+                      <Typography color="text.secondary">บัญชี / พร้อมเพย์</Typography>
+                      <Typography fontWeight={800}>
+                        {settings.promptPayId || "-"}
+                      </Typography>
+                    </Stack>
+
+                    <Stack direction="row" justifyContent="space-between">
+                      <Typography color="text.secondary">ยอดที่ต้องชำระ</Typography>
+                      <Typography fontWeight={900} fontSize={18}>
+                        {formatCurrency(total)}
+                      </Typography>
+                    </Stack>
+
+                    <Divider />
+
+                    <Typography
+                      fontSize={13}
+                      color="text.secondary"
+                      textAlign="center"
+                    >
+                      หลังจากลูกค้าโอนเงินแล้ว กดยืนยันการชำระเงิน
                     </Typography>
-                  ) : isGeneratingQr ? (
-                    <Typography color="text.secondary">กำลังสร้าง QR...</Typography>
-                  ) : qrDataUrl ? (
-                    <Box
-                      component="img"
-                      src={qrDataUrl}
-                      alt="PromptPay QR"
-                      sx={{
-                        width: "100%",
-                        maxWidth: 280,
-                        display: "block",
-                        borderRadius: 3,
-                      }}
-                    />
-                  ) : (
-                    <Typography color="text.secondary">ไม่สามารถสร้าง QR ได้</Typography>
-                  )}
+                  </Stack>
                 </Paper>
               </Stack>
             </Box>
