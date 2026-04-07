@@ -5,9 +5,12 @@
     <title>Customer Display</title>
     <meta
       http-equiv="Content-Security-Policy"
-      content="default-src 'self' data: 'unsafe-inline'; img-src 'self' data:;"
+      content="default-src 'self' data: 'unsafe-inline' https://fonts.googleapis.com https://fonts.gstatic.com; img-src 'self' data: https: file:;"
     />
+
     <style>
+      @import url("https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@100..900&display=swap");
+
       * {
         box-sizing: border-box;
       }
@@ -17,13 +20,15 @@
         margin: 0;
         width: 100%;
         height: 100%;
-        font-family: Arial, Helvetica, sans-serif;
-        background: linear-gradient(
-          135deg,
-          #020617 0%,
-          #0f172a 45%,
-          #111827 100%
-        );
+        font-family:
+          "Noto Sans Thai",
+          "Segoe UI",
+          Tahoma,
+          sans-serif;
+        background:
+          radial-gradient(circle at top left, rgba(59, 130, 246, 0.14), transparent 30%),
+          radial-gradient(circle at bottom right, rgba(16, 185, 129, 0.16), transparent 32%),
+          linear-gradient(135deg, #020617 0%, #0b1220 45%, #111827 100%);
         color: #fff;
         overflow: hidden;
       }
@@ -32,111 +37,162 @@
         width: 100%;
         height: 100%;
         display: grid;
-        grid-template-columns: 1.1fr 0.9fr;
+        grid-template-columns: 1.05fr 0.95fr;
         gap: 24px;
         padding: 28px;
       }
 
-      .left,
-      .right {
-        border-radius: 28px;
+      .panel {
+        border-radius: 32px;
         overflow: hidden;
         border: 1px solid rgba(255, 255, 255, 0.08);
         background: rgba(255, 255, 255, 0.05);
-        backdrop-filter: blur(14px);
+        backdrop-filter: blur(18px);
+        box-shadow: 0 24px 80px rgba(0, 0, 0, 0.24);
       }
 
       .left {
         display: flex;
         flex-direction: column;
-        padding: 28px;
+        padding: 32px;
       }
 
       .brand {
         display: flex;
         align-items: center;
-        gap: 16px;
+        gap: 18px;
         margin-bottom: 24px;
       }
 
       .brand-badge {
-        width: 72px;
-        height: 72px;
-        border-radius: 22px;
+        width: 78px;
+        height: 78px;
+        border-radius: 24px;
         display: flex;
         align-items: center;
         justify-content: center;
-        font-size: 32px;
-        background: rgba(255, 255, 255, 0.1);
+        background: #ffffff;
+        padding: 10px;
+        box-shadow: 0 18px 38px rgba(15, 23, 42, 0.24);
+        flex: 0 0 auto;
+      }
+
+      .brand-badge img {
+        width: 100%;
+        height: 100%;
+        object-fit: contain;
+        display: block;
       }
 
       .shop-name {
-        font-size: 38px;
+        font-size: 42px;
         font-weight: 900;
-        line-height: 1.1;
+        line-height: 1.08;
+        letter-spacing: -0.02em;
       }
 
       .subtitle {
         font-size: 18px;
         color: rgba(255, 255, 255, 0.7);
-        margin-top: 6px;
+        margin-top: 8px;
       }
 
       .receipt-box {
-        margin-top: 8px;
-        margin-bottom: 20px;
+        margin-top: 4px;
+        margin-bottom: 24px;
         padding: 18px 20px;
-        border-radius: 20px;
+        border-radius: 22px;
         background: rgba(255, 255, 255, 0.07);
+        border: 1px solid rgba(255, 255, 255, 0.08);
       }
 
       .receipt-label {
         font-size: 14px;
-        color: rgba(255, 255, 255, 0.65);
+        color: rgba(255, 255, 255, 0.64);
       }
 
       .receipt-no {
-        margin-top: 6px;
-        font-size: 24px;
+        margin-top: 8px;
+        font-size: 26px;
         font-weight: 800;
+        letter-spacing: 0.02em;
       }
 
       .headline {
-        font-size: 28px;
+        font-size: 34px;
         font-weight: 900;
+        line-height: 1.15;
         margin: 0 0 12px;
       }
 
       .desc {
+        font-size: 20px;
+        line-height: 1.6;
+        color: rgba(255, 255, 255, 0.78);
+        margin-bottom: 28px;
+      }
+
+      .instruction-list {
+        display: grid;
+        gap: 12px;
+        margin-bottom: 26px;
+      }
+
+      .instruction-item {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 14px 16px;
+        border-radius: 18px;
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid rgba(255, 255, 255, 0.06);
+      }
+
+      .instruction-dot {
+        width: 34px;
+        height: 34px;
+        border-radius: 999px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex: 0 0 auto;
+        font-weight: 900;
+        color: #0f172a;
+        background: #fff;
+      }
+
+      .instruction-text {
         font-size: 18px;
-        color: rgba(255, 255, 255, 0.76);
-        margin-bottom: 24px;
+        color: rgba(255, 255, 255, 0.88);
       }
 
       .amount-card {
         margin-top: auto;
-        padding: 24px;
-        border-radius: 24px;
+        padding: 28px;
+        border-radius: 28px;
         background: linear-gradient(135deg, #10b981 0%, #059669 100%);
         color: #fff;
+        box-shadow: 0 28px 60px rgba(5, 150, 105, 0.28);
       }
 
       .amount-label {
         font-size: 20px;
-        opacity: 0.92;
+        opacity: 0.95;
       }
 
       .amount-value {
-        margin-top: 10px;
-        font-size: 72px;
+        margin-top: 12px;
+        font-size: 76px;
         font-weight: 900;
         line-height: 1;
+        letter-spacing: -0.04em;
       }
 
       .hint {
         margin-top: 14px;
         font-size: 20px;
-        opacity: 0.95;
+        line-height: 1.5;
+        opacity: 0.96;
       }
 
       .right {
@@ -148,19 +204,20 @@
 
       .qr-panel {
         width: 100%;
-        max-width: 620px;
-        border-radius: 28px;
-        background: #fff;
+        max-width: 640px;
+        border-radius: 32px;
+        background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
         color: #111827;
         padding: 28px;
         text-align: center;
-        box-shadow: 0 24px 70px rgba(0, 0, 0, 0.28);
+        box-shadow: 0 28px 90px rgba(0, 0, 0, 0.26);
       }
 
       .qr-title {
-        font-size: 34px;
+        font-size: 36px;
         font-weight: 900;
         margin-bottom: 8px;
+        letter-spacing: -0.02em;
       }
 
       .qr-subtitle {
@@ -172,13 +229,14 @@
       .qr-image-wrap {
         width: 100%;
         aspect-ratio: 1 / 1;
-        border-radius: 24px;
+        border-radius: 28px;
         border: 1px solid #e5e7eb;
-        background: #f8fafc;
+        background: #ffffff;
         display: flex;
         align-items: center;
         justify-content: center;
         overflow: hidden;
+        box-shadow: inset 0 0 0 10px #f8fafc;
       }
 
       .qr-image {
@@ -190,32 +248,29 @@
 
       .qr-empty {
         color: #6b7280;
-        font-size: 22px;
+        font-size: 24px;
         font-weight: 800;
       }
 
-      .meta {
-        margin-top: 20px;
-        text-align: left;
-        display: grid;
-        gap: 12px;
-      }
-
-      .meta-row {
-        display: flex;
-        justify-content: space-between;
-        gap: 16px;
+      .scan-badge {
+        margin-top: 18px;
+        display: inline-flex;
+        align-items: center;
+        gap: 10px;
+        padding: 12px 18px;
+        border-radius: 999px;
+        background: #ecfdf5;
+        color: #047857;
         font-size: 18px;
-      }
-
-      .meta-label {
-        color: #6b7280;
-      }
-
-      .meta-value {
         font-weight: 800;
-        color: #111827;
-        text-align: right;
+      }
+
+      .scan-dot {
+        width: 10px;
+        height: 10px;
+        border-radius: 999px;
+        background: #10b981;
+        box-shadow: 0 0 0 8px rgba(16, 185, 129, 0.14);
       }
 
       .full-center {
@@ -229,17 +284,24 @@
       }
 
       .waiting-box {
-        max-width: 760px;
+        max-width: 860px;
+        padding: 40px 48px;
+        border-radius: 32px;
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        backdrop-filter: blur(16px);
       }
 
       .waiting-title {
-        font-size: 52px;
+        font-size: 58px;
         font-weight: 900;
+        line-height: 1.1;
       }
 
       .waiting-desc {
-        margin-top: 12px;
+        margin-top: 14px;
         font-size: 24px;
+        line-height: 1.6;
         color: rgba(255, 255, 255, 0.72);
       }
     </style>
@@ -266,7 +328,9 @@
           <div class="full-center">
             <div class="waiting-box">
               <div class="waiting-title">พร้อมรับการชำระเงิน</div>
-              <div class="waiting-desc">หน้าจอนี้จะแสดง QR สำหรับลูกค้าเมื่อเลือกชำระแบบโอนเงิน</div>
+              <div class="waiting-desc">
+                หน้าจอนี้จะแสดง QR สำหรับลูกค้าเมื่อเลือกชำระแบบโอนเงิน
+              </div>
             </div>
           </div>
         `;
@@ -279,9 +343,11 @@
 
         document.getElementById("app").innerHTML = `
           <div class="wrap">
-            <div class="left">
+            <div class="panel left">
               <div class="brand">
-                <div class="brand-badge">฿</div>
+                <div class="brand-badge">
+                  <img src="../assets/QuickPOS.svg" alt="QuickPOS Logo" />
+                </div>
                 <div>
                   <div class="shop-name">${state.shopName || "-"}</div>
                   <div class="subtitle">${
@@ -296,16 +362,31 @@
               </div>
 
               <div class="headline">ชำระเงินด้วยพร้อมเพย์</div>
-              <div class="desc">กรุณาใช้แอปธนาคารสแกน QR ทางด้านขวา</div>
+              <div class="desc">กรุณาใช้แอปธนาคารสแกน QR ทางด้านขวาเพื่อชำระเงิน</div>
+
+              <div class="instruction-list">
+                <div class="instruction-item">
+                  <div class="instruction-dot">1</div>
+                  <div class="instruction-text">เปิดแอปธนาคารบนมือถือของคุณ</div>
+                </div>
+                <div class="instruction-item">
+                  <div class="instruction-dot">2</div>
+                  <div class="instruction-text">เลือกเมนูสแกน QR เพื่อชำระเงิน</div>
+                </div>
+                <div class="instruction-item">
+                  <div class="instruction-dot">3</div>
+                  <div class="instruction-text">แสดงหลักฐานการโอนให้เจ้าหน้าที่ตรวจสอบ</div>
+                </div>
+              </div>
 
               <div class="amount-card">
                 <div class="amount-label">ยอดชำระ</div>
                 <div class="amount-value">${formatCurrency(state.total)}</div>
-                <div class="hint">เมื่อชำระเรียบร้อย เจ้าหน้าที่จะดำเนินการต่อให้ทันที</div>
+                <div class="hint">กรุณาชำระตามยอดนี้เท่านั้น</div>
               </div>
             </div>
 
-            <div class="right">
+            <div class="panel right">
               <div class="qr-panel">
                 <div class="qr-title">PromptPay QR</div>
                 <div class="qr-subtitle">สแกนจ่ายตามยอดที่แสดง</div>
@@ -314,19 +395,9 @@
                   ${qr}
                 </div>
 
-                <div class="meta">
-                  <div class="meta-row">
-                    <div class="meta-label">ชื่อร้าน</div>
-                    <div class="meta-value">${state.shopName || "-"}</div>
-                  </div>
-                  <div class="meta-row">
-                    <div class="meta-label">พร้อมเพย์</div>
-                    <div class="meta-value">${state.promptPayId || "-"}</div>
-                  </div>
-                  <div class="meta-row">
-                    <div class="meta-label">ยอดชำระ</div>
-                    <div class="meta-value">${formatCurrency(state.total)}</div>
-                  </div>
+                <div class="scan-badge">
+                  <span class="scan-dot"></span>
+                  พร้อมให้สแกนชำระเงิน
                 </div>
               </div>
             </div>
