@@ -13,11 +13,21 @@ require("./database/sqlite");
 let mainWindow = null;
 const isDev = !electron_1.app.isPackaged;
 const DEV_SERVER_URL = "http://localhost:5173";
+function getAppIcon() {
+    switch (process.platform) {
+        case "win32":
+            return path_1.default.resolve(__dirname, "../assets/QuickPOS.ico");
+        case "darwin":
+            return path_1.default.resolve(__dirname, "../assets/QuickPOS.icns");
+        default:
+            return path_1.default.resolve(__dirname, "../assets/QuickPOS.png");
+    }
+}
 function createWindow() {
     mainWindow = new electron_1.BrowserWindow({
         width: 1400,
         height: 900,
-        icon: path_1.default.join(__dirname, "../assets/QuickPOS.png"),
+        icon: getAppIcon(),
         webPreferences: {
             preload: path_1.default.join(__dirname, "preload.js"),
             contextIsolation: true,

@@ -11,11 +11,22 @@ let mainWindow: BrowserWindow | null = null;
 const isDev = !app.isPackaged;
 const DEV_SERVER_URL = "http://localhost:5173";
 
+function getAppIcon() {
+  switch (process.platform) {
+    case "win32":
+      return path.resolve(__dirname, "../assets/QuickPOS.ico");
+    case "darwin":
+      return path.resolve(__dirname, "../assets/QuickPOS.icns");
+    default:
+      return path.resolve(__dirname, "../assets/QuickPOS.png");
+  }
+}
+
 function createWindow() {
   mainWindow = new BrowserWindow({
     width: 1400,
     height: 900,
-    icon: path.join(__dirname, "../assets/QuickPOS.png"),
+    icon: getAppIcon(),
     webPreferences: {
       preload: path.join(__dirname, "preload.js"),
       contextIsolation: true,
