@@ -930,6 +930,13 @@ export default function Products() {
         keepMounted
         TransitionComponent={SlideDownTransition}
         transitionDuration={{ appear: 260, enter: 260, exit: 180 }}
+        sx={{
+          "& .MuiDialog-container": {
+            justifyContent: "center",
+            alignItems: "flex-start",
+            pt: { xs: 6, sm: 8, md: 10 },
+          },
+        }}
         BackdropProps={{
           timeout: 260,
           sx: {
@@ -941,8 +948,8 @@ export default function Products() {
         }}
         PaperProps={{
           sx: {
-            mt: { xs: 6, sm: 8, md: 10 },
-            alignSelf: "flex-start",
+            m: 0,
+            width: "100%",
             borderRadius: 6,
             overflow: "hidden",
             background: "rgba(255,255,255,0.90)",
@@ -1386,10 +1393,17 @@ export default function Products() {
         maxWidth="xs"
         TransitionComponent={SlideDownTransition}
         keepMounted
+        sx={{
+          "& .MuiDialog-container": {
+            justifyContent: "center",
+            alignItems: "flex-start",
+            pt: { xs: 8, sm: 10 },
+          },
+        }}
         PaperProps={{
           sx: {
-            mt: { xs: 8, sm: 10 },
-            alignSelf: "flex-start",
+            m: 0,
+            width: "100%",
             borderRadius: 5,
             overflow: "hidden",
             background: "rgba(255,255,255,0.94)",
