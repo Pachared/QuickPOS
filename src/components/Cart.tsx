@@ -1,4 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import generatePayload from "promptpay-qr";
+import QRCode from "qrcode";
 
 import {
   Drawer,
@@ -95,7 +97,7 @@ function formatPreviewReceiptNo(date?: Date) {
   const yyyy = d.getFullYear();
   const mm = String(d.getMonth() + 1).padStart(2, "0");
   const dd = String(d.getDate()).padStart(2, "0");
-  return `RC-${yyyy}${mm}${dd}-PREVIEW`;
+  return `RC-${yyyy}${mm}${dd}-000000`;
 }
 
 export default function Cart({
@@ -114,6 +116,9 @@ export default function Cart({
     500: 0,
     1000: 0,
   });
+
+  const [qrDataUrl, setQrDataUrl] = useState("");
+  const [isGeneratingQr, setIsGeneratingQr] = useState(false);
 
   const [paid, setPaid] = useState(false);
   const [receiptNo, setReceiptNo] = useState("");
@@ -229,7 +234,7 @@ export default function Cart({
       receiptNo: previewReceiptNo,
       promptPayId: settings.promptPayId,
       total,
-      qrDataUrl: "",
+      qrDataUrl,
       ...state,
     };
   };
@@ -280,23 +285,81 @@ export default function Cart({
   }, [openCheckout]);
 
   useEffect(() => {
+    const generateQr = async () => {
+      if (!openCheckout || paymentMethod !== "transfer" || total <= 0) {
+        setQrDataUrl("");
+        setIsGeneratingQr(false);
+        return;
+      }
+
+      if (!settings.promptPayId) {
+        setQrDataUrl("");
+        setIsGeneratingQr(false);
+        return;
+      }
+
+      try {
+        setIsGeneratingQr(true);
+
+        const payload = generatePayload(settings.promptPayId, {
+          amount: total,
+        });
+
+        const dataUrl = await QRCode.toDataURL(payload, {
+          width: 320,
+          margin: 1,
+          errorCorrectionLevel: "M",
+        });
+
+        setQrDataUrl(dataUrl);
+      } catch (err) {
+        console.error("Generate QR failed:", err);
+        setQrDataUrl("");
+        showSnackbar("สร้าง QR ไม่สำเร็จ", "error");
+      } finally {
+        setIsGeneratingQr(false);
+      }
+    };
+
+    void generateQr();
+  }, [openCheckout, paymentMethod, total, settings.promptPayId]);
+
+  useEffect(() => {
     if (!openCheckout) {
       void closeCustomerDisplay();
       return;
     }
 
     if (paymentMethod === "transfer" && settings.enableTransfer) {
-      void openTransferCustomerDisplay();
+      void openTransferCustomerDisplay({
+        qrDataUrl,
+      });
       return;
     }
 
     void closeCustomerDisplay();
-  }, [openCheckout, paymentMethod, settings.enableTransfer]);
+  }, [
+    openCheckout,
+    paymentMethod,
+    settings.enableTransfer,
+    qrDataUrl,
+  ]);
 
   useEffect(() => {
     if (!openCheckout || paymentMethod !== "transfer") return;
-    void updateTransferCustomerDisplay();
+
+    void updateTransferCustomerDisplay({
+      qrDataUrl,
+      total,
+      receiptNo: previewReceiptNo,
+      promptPayId: settings.promptPayId,
+      shopName: settings.shopName,
+      receiptHeaderNote: settings.receiptHeaderNote,
+      isGeneratingQr,
+    } as Partial<CustomerDisplayPayload>);
   }, [
+    qrDataUrl,
+    isGeneratingQr,
     previewReceiptNo,
     total,
     settings.shopName,
@@ -369,6 +432,8 @@ export default function Cart({
     }
 
     resetCash();
+    setQrDataUrl("");
+    setIsGeneratingQr(false);
     setPaid(false);
     setIsSavingOrder(false);
     setSavedOrder(null);
@@ -1294,7 +1359,9 @@ export default function Cart({
                     </Stack>
 
                     <Stack direction="row" justifyContent="space-between">
-                      <Typography color="text.secondary">บัญชี / พร้อมเพย์</Typography>
+                      <Typography color="text.secondary">
+                        บัญชี / พร้อมเพย์
+                      </Typography>
                       <Typography fontWeight={800}>
                         {settings.promptPayId || "-"}
                       </Typography>
@@ -1314,7 +1381,8 @@ export default function Cart({
                       color="text.secondary"
                       textAlign="center"
                     >
-                      หลังจากลูกค้าโอนเงินแล้ว กดยืนยันการชำระเงิน
+                      QR จะแสดงบนหน้าจอลูกค้าเท่านั้น หลังจากลูกค้าโอนเงินแล้ว
+                      กดยืนยันการชำระเงิน
                     </Typography>
                   </Stack>
                 </Paper>
@@ -1355,7 +1423,9 @@ export default function Cart({
                 fontWeight={900}
                 color={summaryTone.secondary}
               >
-                {formatCurrency(paymentMethod === "cash" ? Math.max(change, 0) : 0)}
+                {formatCurrency(
+                  paymentMethod === "cash" ? Math.max(change, 0) : 0
+                )}
               </Typography>
             </Stack>
           </Box>
@@ -1395,7 +1465,7 @@ export default function Cart({
             width="100%"
             direction={{ xs: "column", sm: "row" }}
             spacing={1.2}
-            justifyContent="space-between"
+            justifyContent="flex-end"
           >
             <Button
               onClick={handleCloseCheckout}
@@ -1443,11 +1513,7 @@ export default function Cart({
                 {isSavingOrder ? "กำลังบันทึก..." : "ยืนยันการชำระเงิน"}
               </Button>
             ) : (
-              <Stack
-                direction={{ xs: "column", sm: "row" }}
-                spacing={1.2}
-                width={{ xs: "100%", sm: "auto" }}
-              >
+              <>
                 <Button
                   onClick={handlePrintReceipt}
                   startIcon={<PrintRoundedIcon />}
@@ -1486,7 +1552,7 @@ export default function Cart({
                 >
                   จบการขาย
                 </Button>
-              </Stack>
+              </>
             )}
           </Stack>
         </DialogActions>
