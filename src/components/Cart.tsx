@@ -83,6 +83,24 @@ function escapeHtml(value: string) {
     .replaceAll("'", "&#039;");
 }
 
+function formatReceiptNo(orderId: number, date?: string | Date) {
+  const d = date ? new Date(date) : new Date();
+  const yyyy = d.getFullYear();
+  const mm = String(d.getMonth() + 1).padStart(2, "0");
+  const dd = String(d.getDate()).padStart(2, "0");
+  const running = String(orderId).padStart(6, "0");
+
+  return `RC-${yyyy}${mm}${dd}-${running}`;
+}
+
+function formatPreviewReceiptNo(date?: Date) {
+  const d = date ?? new Date();
+  const yyyy = d.getFullYear();
+  const mm = String(d.getMonth() + 1).padStart(2, "0");
+  const dd = String(d.getDate()).padStart(2, "0");
+  return `RC-${yyyy}${mm}${dd}-PREVIEW`;
+}
+
 export default function Cart({
   cart,
   removeItem,
@@ -142,6 +160,7 @@ export default function Cart({
 
   const canConfirmPayment =
     !isSavingOrder &&
+    !paid &&
     ((paymentMethod === "cash" &&
       settings.enableCash &&
       hasSelectedCash &&
@@ -169,6 +188,10 @@ export default function Cart({
           primary: "#166534",
           secondary: "#16a34a",
         };
+
+  const previewReceiptNo = useMemo(() => {
+    return receiptNo || formatPreviewReceiptNo();
+  }, [receiptNo]);
 
   const showSnackbar = (message: string, severity: AlertColor = "success") => {
     setSnackbar({
@@ -208,7 +231,7 @@ export default function Cart({
       mode: "transfer",
       shopName: settings.shopName,
       receiptHeaderNote: settings.receiptHeaderNote,
-      receiptNo,
+      receiptNo: previewReceiptNo,
       promptPayId: settings.promptPayId,
       total,
       qrDataUrl,
@@ -253,19 +276,12 @@ export default function Cart({
   }, []);
 
   useEffect(() => {
-    if (!openCheckout) return;
+    if (!openCheckout) {
+      setReceiptNo("");
+      return;
+    }
 
-    const now = new Date();
-    const no = `RC-${now.getFullYear()}${String(now.getMonth() + 1).padStart(
-      2,
-      "0"
-    )}${String(now.getDate()).padStart(2, "0")}-${String(
-      now.getHours()
-    ).padStart(2, "0")}${String(now.getMinutes()).padStart(2, "0")}${String(
-      now.getSeconds()
-    ).padStart(2, "0")}`;
-
-    setReceiptNo(no);
+    setReceiptNo("");
   }, [openCheckout]);
 
   useEffect(() => {
@@ -322,7 +338,7 @@ export default function Cart({
     void updateTransferCustomerDisplay();
   }, [
     qrDataUrl,
-    receiptNo,
+    previewReceiptNo,
     total,
     settings.shopName,
     settings.receiptHeaderNote,
@@ -398,6 +414,7 @@ export default function Cart({
     setPaid(false);
     setIsSavingOrder(false);
     setSavedOrder(null);
+    setReceiptNo("");
   };
 
   const handleOpenCheckout = async () => {
@@ -478,6 +495,16 @@ export default function Cart({
 
     const paidLabel =
       receiptOrder?.paymentMethod === "cash" ? "เงินสด" : "โอนเงิน";
+
+    const finalReceiptNo =
+      receiptOrder?.id != null
+        ? formatReceiptNo(receiptOrder.id, receiptOrder.date)
+        : previewReceiptNo;
+
+    const receiptDate =
+      receiptOrder?.date != null
+        ? new Date(receiptOrder.date).toLocaleString("th-TH")
+        : new Date().toLocaleString("th-TH");
 
     const itemsHtml = receiptItems
       .map((item) => {
@@ -568,8 +595,8 @@ export default function Cart({
           <div class="center">
             <div class="title">${escapeHtml(settings.shopName)}</div>
             <div class="muted">${escapeHtml(settings.receiptHeaderNote)}</div>
-            <div class="muted">เลขที่: ${escapeHtml(receiptNo)}</div>
-            <div class="muted">${new Date().toLocaleString("th-TH")}</div>
+            <div class="muted">เลขที่: ${escapeHtml(finalReceiptNo)}</div>
+            <div class="muted">${escapeHtml(receiptDate)}</div>
           </div>
 
           <div class="divider"></div>
@@ -689,7 +716,9 @@ export default function Cart({
       };
 
       const createdOrder = await window.pos.createOrder(payload);
+      const nextReceiptNo = formatReceiptNo(createdOrder.id, createdOrder.date);
 
+      setReceiptNo(nextReceiptNo);
       setSavedOrder(createdOrder);
       onCheckoutSuccess?.(createdOrder);
 
@@ -735,6 +764,10 @@ export default function Cart({
     clearCart?.();
     handleCloseCheckout();
     showSnackbar("จบการขายเรียบร้อย", "success");
+  };
+
+  const cashButtonLabel = (value: number) => {
+    return `${value}`;
   };
 
   return (
@@ -1043,7 +1076,7 @@ export default function Cart({
                 ชำระเงิน
               </Typography>
               <Typography variant="body2" sx={{ opacity: 0.82 }}>
-                เลขที่ใบเสร็จ {receiptNo}
+                เลขที่ใบเสร็จ {previewReceiptNo}
               </Typography>
             </Box>
           </Stack>
@@ -1063,7 +1096,7 @@ export default function Cart({
             fullWidth
             value={paymentMethod}
             onChange={(_, value) => {
-              if (!value) return;
+              if (!value || paid) return;
               if (value === "cash" && !settings.enableCash) return;
               if (value === "transfer" && !settings.enableTransfer) return;
               setPaymentMethod(value);
@@ -1096,11 +1129,14 @@ export default function Cart({
               },
             }}
           >
-            <ToggleButton value="cash" disabled={!settings.enableCash}>
+            <ToggleButton value="cash" disabled={!settings.enableCash || paid}>
               <PaymentsRoundedIcon sx={{ mr: 1 }} />
               เงินสด
             </ToggleButton>
-            <ToggleButton value="transfer" disabled={!settings.enableTransfer}>
+            <ToggleButton
+              value="transfer"
+              disabled={!settings.enableTransfer || paid}
+            >
               <AccountBalanceRoundedIcon sx={{ mr: 1 }} />
               โอนเงิน
             </ToggleButton>
@@ -1149,205 +1185,156 @@ export default function Cart({
                   xs: "repeat(2, 1fr)",
                   sm: "repeat(3, 1fr)",
                 }}
-                gap={1.2}
+                gap={1.25}
               >
-                {CASH_TYPES.map((value) => (
-                  <Button
-                    key={value}
-                    onClick={() => addCash(value)}
-                    sx={{
-                      position: "relative",
-                      borderRadius: 4,
-                      p: 1.4,
-                      minHeight: 84,
-                      textTransform: "none",
-                      color: "#111827",
-                      background:
-                        "linear-gradient(180deg, rgba(255,255,255,0.94) 0%, rgba(249,250,251,0.92) 100%)",
-                      backdropFilter: "blur(8px)",
-                      WebkitBackdropFilter: "blur(8px)",
-                      border: "1px solid #dbe2ea",
-                      boxShadow: "0 10px 20px rgba(15, 23, 42, 0.06)",
-                      display: "flex",
-                      flexDirection: "column",
-                      alignItems: "flex-start",
-                      justifyContent: "space-between",
-                      transition: "all 0.18s ease",
-                      "&:hover": {
-                        background: "#ffffff",
-                        transform: "translateY(-2px)",
-                        boxShadow: "0 14px 24px rgba(15, 23, 42, 0.10)",
-                        borderColor: "#94a3b8",
-                      },
-                    }}
-                  >
-                    <Typography
-                      fontSize={12}
-                      color="text.secondary"
-                      fontWeight={700}
+                {CASH_TYPES.map((value) => {
+                  const qty = cashCounts[value];
+                  return (
+                    <Button
+                      key={value}
+                      onClick={() => addCash(value)}
+                      disabled={paid}
+                      sx={{
+                        minHeight: 74,
+                        borderRadius: 4,
+                        border: "1px solid #dbe1ea",
+                        background: "#fff",
+                        color: "#111827",
+                        textTransform: "none",
+                        px: 1.5,
+                        py: 1.4,
+                        justifyContent: "space-between",
+                        boxShadow: "0 10px 22px rgba(15,23,42,0.05)",
+                        "&:hover": {
+                          background: "#f8fafc",
+                          borderColor: "#cbd5e1",
+                        },
+                        "&.Mui-disabled": {
+                          background: "#f8fafc",
+                          color: "#9ca3af",
+                        },
+                      }}
                     >
-                      แบงก์
-                    </Typography>
+                      <Stack width="100%" alignItems="flex-start" spacing={0.3}>
+                        <Typography fontWeight={900} fontSize={18}>
+                          {cashButtonLabel(value)}
+                        </Typography>
+                        <Typography variant="body2" color="text.secondary">
+                          เพิ่มเงินสด
+                        </Typography>
+                      </Stack>
 
-                    <Typography fontSize={24} fontWeight={900} lineHeight={1}>
-                      {value}
-                    </Typography>
-
-                    {cashCounts[value] > 0 && (
                       <Chip
-                        label={`${cashCounts[value]} ใบ`}
+                        label={`x${qty}`}
                         size="small"
                         sx={{
-                          position: "absolute",
-                          top: 10,
-                          right: 10,
-                          borderRadius: 999,
                           fontWeight: 800,
-                          bgcolor: "#111827",
-                          color: "#fff",
+                          borderRadius: 999,
+                          px: 0.75,
+                          bgcolor: qty > 0 ? "#111827" : "#eef2f7",
+                          color: qty > 0 ? "#fff" : "#64748b",
                         }}
                       />
-                    )}
-                  </Button>
-                ))}
+                    </Button>
+                  );
+                })}
               </Box>
 
               <Stack
                 direction={{ xs: "column", sm: "row" }}
-                spacing={1.2}
+                spacing={1.25}
                 mt={1.6}
               >
                 <Button
                   fullWidth
-                  variant="contained"
-                  startIcon={<AutoAwesomeRoundedIcon />}
                   onClick={setExactCash}
+                  disabled={paid}
+                  startIcon={<AutoAwesomeRoundedIcon />}
                   sx={{
-                    borderRadius: 3,
-                    py: 1.15,
+                    py: 1.2,
+                    borderRadius: 4,
                     fontWeight: 800,
                     textTransform: "none",
-                    background:
-                      "linear-gradient(135deg, #111827 0%, #000 100%)",
-                    "&:hover": {
-                      background:
-                        "linear-gradient(135deg, #000 0%, #111827 100%)",
-                    },
+                    color: "#111827",
+                    background: "#fff",
+                    border: "1px solid #dbe1ea",
                   }}
                 >
-                  รับเงินพอดี
+                  คำนวณเงินสดพอดี
                 </Button>
 
                 <Button
                   fullWidth
-                  variant="outlined"
-                  startIcon={<RestartAltRoundedIcon />}
                   onClick={resetCash}
+                  disabled={paid}
+                  startIcon={<RestartAltRoundedIcon />}
                   sx={{
-                    borderRadius: 3,
-                    py: 1.15,
+                    py: 1.2,
+                    borderRadius: 4,
                     fontWeight: 800,
                     textTransform: "none",
-                    borderColor: "#d1d5db",
-                    color: "#111827",
-                    background: "rgba(255,255,255,0.72)",
-                    backdropFilter: "blur(8px)",
-                    WebkitBackdropFilter: "blur(8px)",
-                    "&:hover": {
-                      borderColor: "#9ca3af",
-                      background: "#f9fafb",
-                    },
+                    color: "#991b1b",
+                    background: "#fff",
+                    border: "1px solid #fecaca",
                   }}
                 >
-                  ล้างเงินสด
+                  รีเซ็ตเงินสด
                 </Button>
               </Stack>
-
-              <Box
-                sx={{
-                  mt: 1.8,
-                  p: 1.8,
-                  borderRadius: 4,
-                  border: "1px solid #e5e7eb",
-                  background: "rgba(255,255,255,0.78)",
-                  backdropFilter: "blur(12px)",
-                  WebkitBackdropFilter: "blur(12px)",
-                }}
-              >
-                <Typography fontWeight={800} mb={1.1}>
-                  สรุปแบงก์ที่รับ
-                </Typography>
-
-                <Stack spacing={1}>
-                  {CASH_TYPES.some((value) => cashCounts[value] > 0) ? (
-                    CASH_TYPES.filter((value) => cashCounts[value] > 0).map(
-                      (value) => (
-                        <Stack
-                          key={value}
-                          direction="row"
-                          justifyContent="space-between"
-                          alignItems="center"
-                        >
-                          <Typography color="text.secondary">
-                            {value} × {cashCounts[value]}
-                          </Typography>
-                          <Typography fontWeight={800}>
-                            {formatCurrency(value * cashCounts[value])}
-                          </Typography>
-                        </Stack>
-                      )
-                    )
-                  ) : (
-                    <Typography variant="body2" color="text.secondary">
-                      ยังไม่ได้เลือกแบงก์
-                    </Typography>
-                  )}
-                </Stack>
-              </Box>
             </>
           )}
 
           {paymentMethod === "transfer" && settings.enableTransfer && (
             <Box
               sx={{
-                p: 2.2,
+                mt: 0.5,
+                p: 2,
                 borderRadius: 4,
+                background: "rgba(255,255,255,0.82)",
                 border: "1px solid #e5e7eb",
-                bgcolor: "rgba(255,255,255,0.78)",
-                backdropFilter: "blur(14px)",
-                WebkitBackdropFilter: "blur(14px)",
+                boxShadow: "0 12px 30px rgba(15,23,42,0.06)",
               }}
             >
-              <Stack direction={{ xs: "column", sm: "row" }} spacing={2}>
-                <Box
+              <Stack spacing={1.6} alignItems="center">
+                <Avatar
                   sx={{
-                    width: { xs: "100%", sm: 280 },
-                    minHeight: 280,
+                    width: 54,
+                    height: 54,
+                    borderRadius: 3,
+                    bgcolor: "#ecfeff",
+                    color: "#0891b2",
+                  }}
+                >
+                  <QrCode2RoundedIcon />
+                </Avatar>
+
+                <Box textAlign="center">
+                  <Typography fontWeight={900}>ชำระผ่าน PromptPay</Typography>
+                  <Typography variant="body2" color="text.secondary">
+                    {settings.promptPayId || "ยังไม่ได้ตั้งค่า PromptPay"}
+                  </Typography>
+                </Box>
+
+                <Paper
+                  elevation={0}
+                  sx={{
+                    width: "100%",
+                    p: 2,
                     borderRadius: 4,
-                    border: "1px solid #e5e7eb",
-                    bgcolor: "rgba(250,250,250,0.9)",
+                    border: "1px dashed #d1d5db",
+                    background: "#fff",
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "center",
-                    overflow: "hidden",
-                    backdropFilter: "blur(8px)",
-                    WebkitBackdropFilter: "blur(8px)",
+                    minHeight: 320,
                   }}
                 >
-                  {isGeneratingQr ? (
-                    <Stack spacing={1} alignItems="center">
-                      <Avatar
-                        sx={{
-                          bgcolor: "#eef2ff",
-                          color: "#4f46e5",
-                          width: 52,
-                          height: 52,
-                        }}
-                      >
-                        <QrCode2RoundedIcon />
-                      </Avatar>
-                      <Typography fontWeight={800}>กำลังสร้าง QR</Typography>
-                    </Stack>
+                  {!settings.promptPayId ? (
+                    <Typography color="error.main" textAlign="center">
+                      กรุณาตั้งค่า PromptPay ในหน้า Settings ก่อน
+                    </Typography>
+                  ) : isGeneratingQr ? (
+                    <Typography color="text.secondary">กำลังสร้าง QR...</Typography>
                   ) : qrDataUrl ? (
                     <Box
                       component="img"
@@ -1355,209 +1342,185 @@ export default function Cart({
                       alt="PromptPay QR"
                       sx={{
                         width: "100%",
-                        height: "100%",
-                        objectFit: "contain",
-                        p: 2,
+                        maxWidth: 280,
+                        display: "block",
+                        borderRadius: 3,
                       }}
                     />
                   ) : (
-                    <Stack spacing={1} alignItems="center">
-                      <Avatar
-                        sx={{
-                          bgcolor: "#f3f4f6",
-                          color: "#9ca3af",
-                          width: 52,
-                          height: 52,
-                        }}
-                      >
-                        <QrCode2RoundedIcon />
-                      </Avatar>
-                      <Typography fontWeight={800}>
-                        {settings.promptPayId
-                          ? "ไม่พบ QR"
-                          : "ยังไม่ได้ตั้งค่า PromptPay"}
-                      </Typography>
-                    </Stack>
+                    <Typography color="text.secondary">ไม่สามารถสร้าง QR ได้</Typography>
                   )}
-                </Box>
-
-                <Box flex={1}>
-                  <Typography fontSize={20} fontWeight={900} color="#111827">
-                    พร้อมเพย์
-                  </Typography>
-                  <Typography color="text.secondary" mt={0.5}>
-                    หน้าจอลูกค้าจะแสดง QR เต็มจอที่อีกจออัตโนมัติ
-                  </Typography>
-
-                  <Paper
-                    elevation={0}
-                    sx={{
-                      mt: 1.6,
-                      p: 1.8,
-                      borderRadius: 4,
-                      border: "1px solid #e5e7eb",
-                      bgcolor: "rgba(249,250,251,0.88)",
-                      backdropFilter: "blur(10px)",
-                      WebkitBackdropFilter: "blur(10px)",
-                    }}
-                  >
-                    <Stack spacing={1}>
-                      <Stack direction="row" justifyContent="space-between">
-                        <Typography color="text.secondary">ชื่อร้าน</Typography>
-                        <Typography fontWeight={800}>
-                          {settings.shopName}
-                        </Typography>
-                      </Stack>
-                      <Stack direction="row" justifyContent="space-between">
-                        <Typography color="text.secondary">
-                          พร้อมเพย์
-                        </Typography>
-                        <Typography fontWeight={800}>
-                          {settings.promptPayId || "-"}
-                        </Typography>
-                      </Stack>
-                      <Stack direction="row" justifyContent="space-between">
-                        <Typography color="text.secondary">ยอดชำระ</Typography>
-                        <Typography
-                          fontSize={22}
-                          fontWeight={900}
-                          color="#111827"
-                        >
-                          {formatCurrency(total)}
-                        </Typography>
-                      </Stack>
-                    </Stack>
-                  </Paper>
-                </Box>
+                </Paper>
               </Stack>
+            </Box>
+          )}
+
+          <Box
+            sx={{
+              mt: 2,
+              p: 2,
+              borderRadius: 4,
+              background: summaryTone.bg,
+              border: `1px solid ${summaryTone.border}`,
+              boxShadow: "0 10px 24px rgba(15,23,42,0.04)",
+            }}
+          >
+            <Stack direction="row" justifyContent="space-between" mb={1}>
+              <Typography color={summaryTone.primary}>รับเงิน</Typography>
+              <Typography fontWeight={900} color={summaryTone.primary}>
+                {formatCurrency(paymentMethod === "cash" ? received : total)}
+              </Typography>
+            </Stack>
+
+            <Stack direction="row" justifyContent="space-between" mb={1}>
+              <Typography color={summaryTone.primary}>ยอดชำระ</Typography>
+              <Typography fontWeight={900} color={summaryTone.primary}>
+                {formatCurrency(total)}
+              </Typography>
+            </Stack>
+
+            <Stack direction="row" justifyContent="space-between">
+              <Typography color={summaryTone.secondary} fontWeight={800}>
+                เงินทอน
+              </Typography>
+              <Typography
+                fontSize={20}
+                fontWeight={900}
+                color={summaryTone.secondary}
+              >
+                {formatCurrency(paymentMethod === "cash" ? Math.max(change, 0) : 0)}
+              </Typography>
+            </Stack>
+          </Box>
+
+          {paid && savedOrder && (
+            <Box
+              sx={{
+                mt: 2,
+                p: 2,
+                borderRadius: 4,
+                bgcolor: "#f0fdf4",
+                border: "1px solid #bbf7d0",
+              }}
+            >
+              <Typography fontWeight={900} color="#166534">
+                บันทึกการขายเรียบร้อย
+              </Typography>
+              <Typography variant="body2" color="#166534" mt={0.5}>
+                เลขที่ใบเสร็จ {formatReceiptNo(savedOrder.id, savedOrder.date)}
+              </Typography>
             </Box>
           )}
         </DialogContent>
 
         <DialogActions
           sx={{
-            p: 3,
-            pt: 1,
+            px: 3,
+            py: 2.2,
+            borderTop: "1px solid rgba(229,231,235,0.85)",
             background:
-              "linear-gradient(180deg, rgba(248,250,252,0.74) 0%, rgba(255,255,255,0.84) 100%)",
+              "linear-gradient(180deg, rgba(255,255,255,0.9) 0%, rgba(248,250,252,0.94) 100%)",
             backdropFilter: "blur(10px)",
             WebkitBackdropFilter: "blur(10px)",
-            borderTop: "1px solid rgba(226,232,240,0.72)",
           }}
         >
-          <Stack spacing={1.5} width="100%">
-            <Paper
-              elevation={0}
+          <Stack
+            width="100%"
+            direction={{ xs: "column", sm: "row" }}
+            spacing={1.2}
+            justifyContent="space-between"
+          >
+            <Button
+              onClick={handleCloseCheckout}
+              disabled={isSavingOrder}
               sx={{
-                mt: 1,
-                p: 2,
+                minWidth: 130,
+                py: 1.2,
                 borderRadius: 4,
-                border: `1px solid ${summaryTone.border}`,
-                background: summaryTone.bg,
-                transition: "all 0.2s ease",
-                boxShadow: "0 10px 24px rgba(15, 23, 42, 0.06)",
+                fontWeight: 800,
+                textTransform: "none",
+                color: "#374151",
+                background: "#fff",
+                border: "1px solid #d1d5db",
               }}
             >
-              <Stack direction="row" justifyContent="space-between" mb={1}>
-                <Typography color={summaryTone.primary} fontWeight={700}>
-                  รับเงิน
-                </Typography>
-                <Typography fontWeight={900} color={summaryTone.primary}>
-                  {formatCurrency(paymentMethod === "cash" ? received : total)}
-                </Typography>
-              </Stack>
+              ปิด
+            </Button>
 
-              <Stack direction="row" justifyContent="space-between" mb={1}>
-                <Typography color={summaryTone.primary} fontWeight={700}>
-                  ยอดชำระ
-                </Typography>
-                <Typography fontWeight={900} color={summaryTone.primary}>
-                  {formatCurrency(total)}
-                </Typography>
-              </Stack>
-
-              <Stack
-                direction="row"
-                justifyContent="space-between"
-                alignItems="center"
-              >
-                <Typography color={summaryTone.secondary} fontWeight={800}>
-                  เงินทอน
-                </Typography>
-                <Typography
-                  fontSize={20}
-                  fontWeight={900}
-                  color={summaryTone.secondary}
-                >
-                  {formatCurrency(
-                    paymentMethod === "cash" ? Math.max(change, 0) : 0
-                  )}
-                </Typography>
-              </Stack>
-            </Paper>
-
-            <Stack direction={{ xs: "column", sm: "row" }} spacing={1.2}>
+            {!paid ? (
               <Button
-                fullWidth
-                variant="outlined"
-                color="inherit"
-                onClick={handleCloseCheckout}
-                disabled={isSavingOrder}
+                onClick={handleConfirmPayment}
+                disabled={!canConfirmPayment}
+                startIcon={<PaymentsRoundedIcon />}
                 sx={{
-                  borderRadius: 3,
-                  py: 1.25,
+                  minWidth: 170,
+                  py: 1.2,
+                  borderRadius: 4,
+                  fontWeight: 900,
                   textTransform: "none",
-                  fontWeight: 800,
-                  borderColor: "#d1d5db",
-                  background: "rgba(255,255,255,0.68)",
-                  backdropFilter: "blur(8px)",
-                  WebkitBackdropFilter: "blur(8px)",
+                  color: "#fff",
+                  background:
+                    "linear-gradient(135deg, #111827 0%, #000000 100%)",
+                  boxShadow: "0 14px 28px rgba(15,23,42,0.16)",
+                  "&:hover": {
+                    background:
+                      "linear-gradient(135deg, #000000 0%, #111827 100%)",
+                  },
+                  "&.Mui-disabled": {
+                    color: "#9ca3af",
+                    background: "#e5e7eb",
+                    boxShadow: "none",
+                  },
                 }}
               >
-                ปิด
+                {isSavingOrder ? "กำลังบันทึก..." : "ยืนยันการชำระเงิน"}
               </Button>
-
-              {!paid ? (
+            ) : (
+              <Stack
+                direction={{ xs: "column", sm: "row" }}
+                spacing={1.2}
+                width={{ xs: "100%", sm: "auto" }}
+              >
                 <Button
-                  fullWidth
-                  variant="contained"
-                  onClick={handleConfirmPayment}
-                  disabled={!canConfirmPayment}
-                  startIcon={<PaymentsRoundedIcon />}
-                  sx={{
-                    py: 1.25,
-                    borderRadius: 3,
-                    textTransform: "none",
-                    fontWeight: 900,
-                    boxShadow: "none",
-                    background: canConfirmPayment
-                      ? "linear-gradient(135deg, #111827 0%, #374151 100%)"
-                      : "#d1d5db",
-                    color: canConfirmPayment ? "#fff" : "#6b7280",
-                  }}
-                >
-                  {isSavingOrder ? "กำลังบันทึก..." : "ยืนยันการชำระเงิน"}
-                </Button>
-              ) : (
-                <Button
-                  fullWidth
-                  variant="contained"
-                  onClick={handleFinishSale}
+                  onClick={handlePrintReceipt}
                   startIcon={<PrintRoundedIcon />}
                   sx={{
-                    py: 1.25,
-                    borderRadius: 3,
+                    minWidth: 150,
+                    py: 1.2,
+                    borderRadius: 4,
+                    fontWeight: 800,
                     textTransform: "none",
+                    color: "#111827",
+                    background: "#fff",
+                    border: "1px solid #d1d5db",
+                  }}
+                >
+                  พิมพ์ใบเสร็จ
+                </Button>
+
+                <Button
+                  onClick={handleFinishSale}
+                  startIcon={<PointOfSaleRoundedIcon />}
+                  sx={{
+                    minWidth: 170,
+                    py: 1.2,
+                    borderRadius: 4,
                     fontWeight: 900,
-                    boxShadow: "none",
+                    textTransform: "none",
+                    color: "#fff",
                     background:
-                      "linear-gradient(135deg, #111827 0%, #374151 100%)",
+                      "linear-gradient(135deg, #16a34a 0%, #15803d 100%)",
+                    boxShadow: "0 14px 28px rgba(22,163,74,0.18)",
+                    "&:hover": {
+                      background:
+                        "linear-gradient(135deg, #15803d 0%, #166534 100%)",
+                    },
                   }}
                 >
                   จบการขาย
                 </Button>
-              )}
-            </Stack>
+              </Stack>
+            )}
           </Stack>
         </DialogActions>
       </Dialog>
@@ -1567,13 +1530,16 @@ export default function Cart({
         autoHideDuration={2600}
         onClose={handleCloseSnackbar}
         anchorOrigin={{ vertical: "top", horizontal: "center" }}
-        TransitionComponent={SlideDownTransition}
       >
         <Alert
           onClose={handleCloseSnackbar}
           severity={snackbar.severity}
           variant="filled"
-          sx={{ width: "100%", borderRadius: 3 }}
+          sx={{
+            width: "100%",
+            borderRadius: 3,
+            fontWeight: 700,
+          }}
         >
           {snackbar.message}
         </Alert>
