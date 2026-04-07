@@ -24,6 +24,7 @@ function createWindow() {
             nodeIntegration: false,
         },
     });
+    mainWindow.setMenu(null);
     if (isDev) {
         void mainWindow.loadURL(DEV_SERVER_URL);
         mainWindow.webContents.openDevTools();
