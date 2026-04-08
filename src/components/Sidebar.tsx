@@ -99,7 +99,7 @@ export default function Sidebar() {
       >
         <Box
           component="img"
-          src="assets/QuickPOS.svg"
+          src="/QuickPOS.svg"
           alt="QuickPOS"
           sx={{
             height: 80,
