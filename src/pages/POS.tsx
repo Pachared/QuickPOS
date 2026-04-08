@@ -235,7 +235,10 @@ export default function POS({ cart, setCart }: Props) {
   return (
     <Box
       sx={{
-        minHeight: "100%",
+        minHeight: "100vh",
+        display: "flex",
+        flexDirection: "column",
+
         px: { xs: 0, md: 0 },
         pt: 0,
         pb: { xs: 4, md: 6 },
@@ -426,13 +429,14 @@ export default function POS({ cart, setCart }: Props) {
             borderRadius: 5,
             border: "1px solid #e5e7eb",
             background: "#fff",
+
             display: "flex",
             flexDirection: "column",
             alignItems: "center",
             justifyContent: "center",
             gap: 1.5,
-            minHeight: "calc(100vh - 260px)",
-            backdropFilter: "blur(4px)",
+
+            flexGrow: 1,
           }}
         >
           <Avatar
