@@ -32,7 +32,6 @@ const bottomMenu = [
 
 const buttonStyle = {
   borderRadius: 5,
-  mb: 1.5,
   justifyContent: "center",
   height: 75,
   width: 75,
@@ -129,6 +128,7 @@ export default function Sidebar() {
           flexDirection: "column",
           alignItems: "center",
           overflowY: "auto",
+          gap: 1.5,
         }}
       >
         {mainMenu.map((item) => {
