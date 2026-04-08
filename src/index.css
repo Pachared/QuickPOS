@@ -1,7 +1,6 @@
 @font-face {
   font-family: "Noto Sans Thai";
-  src: url("/fonts/NotoSansThai-VariableFont_wdth,wght.ttf")
-    format("truetype");
+  src: url("/fonts/NotoSansThai-VariableFont_wdth,wght.ttf") format("truetype");
   font-weight: 100 900;
   font-style: normal;
   font-display: swap;
@@ -10,8 +9,28 @@
 html,
 body,
 #root {
+  height: 100%;
   margin: 0;
   padding: 0;
-  background-color: "#EEEEEE";
   font-family: "Noto Sans Thai", sans-serif;
+  overflow: hidden;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+* {
+  scrollbar-width: none;
+}
+
+*::-webkit-scrollbar {
+  width: 0px;
+  height: 0px;
+}
+
+* {
+  -ms-overflow-style: none;
 }

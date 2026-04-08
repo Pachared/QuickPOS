@@ -235,10 +235,11 @@ export default function POS({ cart, setCart }: Props) {
   return (
     <Box
       sx={{
-        minHeight: "100vh",
+        height: "100%",
+        minHeight: 0,
         display: "flex",
         flexDirection: "column",
-
+        overflow: "hidden",
         px: { xs: 0, md: 0 },
         pt: 0,
         pb: { xs: 4, md: 6 },
@@ -255,6 +256,7 @@ export default function POS({ cart, setCart }: Props) {
           position: "sticky",
           top: 0,
           zIndex: 10,
+          flexShrink: 0,
         }}
       >
         <Stack direction="row" spacing={1.5} alignItems="center">
@@ -289,6 +291,7 @@ export default function POS({ cart, setCart }: Props) {
           borderRadius: 5,
           border: "1px solid #e5e7eb",
           background: "#fff",
+          flexShrink: 0,
         }}
       >
         <Stack
@@ -367,6 +370,7 @@ export default function POS({ cart, setCart }: Props) {
           borderRadius: 5,
           border: "1px solid #e5e7eb",
           background: "#fff",
+          flexShrink: 0,
         }}
       >
         <Typography variant="subtitle1" fontWeight={800} mb={1.5}>
@@ -401,221 +405,235 @@ export default function POS({ cart, setCart }: Props) {
         </Stack>
       </Paper>
 
-      {loading ? (
-        <Paper
-          elevation={0}
-          sx={{
-            p: 5,
-            borderRadius: 5,
-            border: "1px solid #e5e7eb",
-            background: "#fff",
-            display: "flex",
-            flexDirection: "column",
-            alignItems: "center",
-            justifyContent: "center",
-            gap: 1.5,
-          }}
-        >
-          <CircularProgress size={32} />
-          <Typography fontWeight={700} color="text.secondary">
-            กำลังโหลดข้อมูลสินค้า...
-          </Typography>
-        </Paper>
-      ) : displayProducts.length === 0 ? (
-        <Paper
-          elevation={0}
-          sx={{
-            p: 5,
-            borderRadius: 5,
-            border: "1px solid #e5e7eb",
-            background: "#fff",
-
-            display: "flex",
-            flexDirection: "column",
-            alignItems: "center",
-            justifyContent: "center",
-            gap: 1.5,
-
-            flexGrow: 1,
-          }}
-        >
-          <Avatar
+      <Box
+        sx={{
+          flex: 1,
+          minHeight: 0,
+          overflowY: "auto",
+          scrollbarWidth: "none",
+          msOverflowStyle: "none",
+          "&::-webkit-scrollbar": {
+            width: 0,
+            height: 0,
+            display: "none",
+          },
+        }}
+      >
+        {loading ? (
+          <Paper
+            elevation={0}
             sx={{
-              width: 68,
-              height: 68,
-              borderRadius: 4,
-              bgcolor: "#f3f4f6",
-              color: "#9ca3af",
+              p: 5,
+              borderRadius: 5,
+              border: "1px solid #e5e7eb",
+              background: "#fff",
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: 1.5,
+              minHeight: 280,
             }}
           >
-            <LocalMallRoundedIcon sx={{ fontSize: 36 }} />
-          </Avatar>
-
-          <Typography variant="h6" fontWeight={800}>
-            ไม่พบสินค้า
-          </Typography>
-          <Typography color="text.secondary">
-            ยังไม่มีสินค้าในฐานข้อมูลหรือไม่มีสินค้าในหมวดนี้
-          </Typography>
-        </Paper>
-      ) : (
-        <Box
-          display="grid"
-          gridTemplateColumns={{
-            xs: "repeat(1, 1fr)",
-            sm: "repeat(2, 1fr)",
-            md: "repeat(3, 1fr)",
-          }}
-          gap={2}
-        >
-          {displayProducts.map((product) => (
-            <Card
-              key={product.id}
-              onClick={() => addToCart(product)}
+            <CircularProgress size={32} />
+            <Typography fontWeight={700} color="text.secondary">
+              กำลังโหลดข้อมูลสินค้า...
+            </Typography>
+          </Paper>
+        ) : displayProducts.length === 0 ? (
+          <Paper
+            elevation={0}
+            sx={{
+              p: 5,
+              borderRadius: 5,
+              border: "1px solid #e5e7eb",
+              background: "#fff",
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: 1.5,
+              minHeight: "100%",
+            }}
+          >
+            <Avatar
               sx={{
-                p: 1.5,
-                borderRadius: 5,
-                border: "1px solid #e5e7eb",
-                boxShadow: "0 10px 24px rgba(15, 23, 42, 0.06)",
-                cursor: "pointer",
-                overflow: "hidden",
-                background: "linear-gradient(180deg, #ffffff 0%, #fcfcfd 100%)",
-                transition: "all 0.22s ease",
-                "&:hover": {
-                  transform: "translateY(-4px)",
-                  boxShadow: "0 18px 34px rgba(15, 23, 42, 0.12)",
-                },
+                width: 68,
+                height: 68,
+                borderRadius: 4,
+                bgcolor: "#f3f4f6",
+                color: "#9ca3af",
               }}
             >
-              <Box
+              <LocalMallRoundedIcon sx={{ fontSize: 36 }} />
+            </Avatar>
+
+            <Typography variant="h6" fontWeight={800}>
+              ไม่พบสินค้า
+            </Typography>
+            <Typography color="text.secondary">
+              ยังไม่มีสินค้าในฐานข้อมูลหรือไม่มีสินค้าในหมวดนี้
+            </Typography>
+          </Paper>
+        ) : (
+          <Box
+            display="grid"
+            gridTemplateColumns={{
+              xs: "repeat(1, 1fr)",
+              sm: "repeat(2, 1fr)",
+              md: "repeat(3, 1fr)",
+            }}
+            gap={2}
+          >
+            {displayProducts.map((product) => (
+              <Card
+                key={product.id}
+                onClick={() => addToCart(product)}
                 sx={{
-                  height: 200,
-                  borderRadius: 4,
-                  background:
-                    "linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%)",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  mb: 1.5,
-                  position: "relative",
+                  p: 1.5,
+                  borderRadius: 5,
+                  border: "1px solid #e5e7eb",
+                  boxShadow: "0 10px 24px rgba(15, 23, 42, 0.06)",
+                  cursor: "pointer",
+                  overflow: "hidden",
+                  background: "linear-gradient(180deg, #ffffff 0%, #fcfcfd 100%)",
+                  transition: "all 0.22s ease",
+                  "&:hover": {
+                    transform: "translateY(-4px)",
+                    boxShadow: "0 18px 34px rgba(15, 23, 42, 0.12)",
+                  },
                 }}
               >
-                <LocalMallRoundedIcon sx={{ fontSize: 54, color: "#9ca3af" }} />
-
                 <Box
                   sx={{
-                    position: "absolute",
-                    top: 12,
-                    left: 12,
-                    px: 1.2,
-                    py: 0.5,
-                    borderRadius: 999,
-                    fontSize: 12,
-                    fontWeight: 700,
-                    color: "#111827",
-                    bgcolor: "rgba(255,255,255,0.85)",
-                    backdropFilter: "blur(6px)",
-                    border: "1px solid rgba(0,0,0,0.05)",
+                    height: 200,
+                    borderRadius: 4,
+                    background:
+                      "linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%)",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    mb: 1.5,
+                    position: "relative",
                   }}
                 >
-                  {product.category || "ทั่วไป"}
-                </Box>
+                  <LocalMallRoundedIcon sx={{ fontSize: 54, color: "#9ca3af" }} />
 
-                <Box
-                  sx={{
-                    position: "absolute",
-                    top: 12,
-                    right: 12,
-                    px: 1.2,
-                    py: 0.5,
-                    borderRadius: 999,
-                    fontSize: 12,
-                    fontWeight: 700,
-                    color: (product.stockQty ?? 0) > 0 ? "#166534" : "#991b1b",
-                    bgcolor:
-                      (product.stockQty ?? 0) > 0
-                        ? "rgba(220,252,231,0.92)"
-                        : "rgba(254,226,226,0.92)",
-                    backdropFilter: "blur(6px)",
-                    border: "1px solid rgba(0,0,0,0.05)",
-                  }}
-                >
-                  คงเหลือ {product.stockQty ?? 0}
-                </Box>
-              </Box>
-
-              <CardContent sx={{ p: 0, "&:last-child": { pb: 0 } }}>
-                <Typography
-                  variant="h6"
-                  fontWeight={800}
-                  sx={{
-                    color: "#111827",
-                    fontSize: "1.05rem",
-                    minHeight: 32,
-                  }}
-                >
-                  {product.name}
-                </Typography>
-
-                <Box
-                  display="flex"
-                  alignItems="center"
-                  justifyContent="space-between"
-                  mt={1.5}
-                >
-                  <Box>
-                    <Typography
-                      variant="body2"
-                      sx={{ color: "#6b7280", mb: 0.2 }}
-                    >
-                      ราคา
-                    </Typography>
-                    <Typography
-                      fontWeight={800}
-                      sx={{
-                        fontSize: "1.1rem",
-                        color: "#111827",
-                      }}
-                    >
-                      {formatCurrency(product.price)}
-                    </Typography>
-                  </Box>
-
-                  <IconButton
-                    size="medium"
-                    disabled={(product.stockQty ?? 0) <= 0}
+                  <Box
                     sx={{
-                      width: 46,
-                      height: 46,
-                      background:
-                        "linear-gradient(135deg, #111827 0%, #000 100%)",
-                      color: "white",
-                      boxShadow: "0 8px 18px rgba(0,0,0,0.18)",
-                      "&:hover": {
-                        background:
-                          "linear-gradient(135deg, #000 0%, #111827 100%)",
-                        transform: "scale(1.05)",
-                      },
-                      "&.Mui-disabled": {
-                        background: "#e5e7eb",
-                        color: "#9ca3af",
-                        boxShadow: "none",
-                      },
-                    }}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      addToCart(product);
-                      focusBarcodeInput();
+                      position: "absolute",
+                      top: 12,
+                      left: 12,
+                      px: 1.2,
+                      py: 0.5,
+                      borderRadius: 999,
+                      fontSize: 12,
+                      fontWeight: 700,
+                      color: "#111827",
+                      bgcolor: "rgba(255,255,255,0.85)",
+                      backdropFilter: "blur(6px)",
+                      border: "1px solid rgba(0,0,0,0.05)",
                     }}
                   >
-                    <AddRoundedIcon fontSize="medium" />
-                  </IconButton>
+                    {product.category || "ทั่วไป"}
+                  </Box>
+
+                  <Box
+                    sx={{
+                      position: "absolute",
+                      top: 12,
+                      right: 12,
+                      px: 1.2,
+                      py: 0.5,
+                      borderRadius: 999,
+                      fontSize: 12,
+                      fontWeight: 700,
+                      color: (product.stockQty ?? 0) > 0 ? "#166534" : "#991b1b",
+                      bgcolor:
+                        (product.stockQty ?? 0) > 0
+                          ? "rgba(220,252,231,0.92)"
+                          : "rgba(254,226,226,0.92)",
+                      backdropFilter: "blur(6px)",
+                      border: "1px solid rgba(0,0,0,0.05)",
+                    }}
+                  >
+                    คงเหลือ {product.stockQty ?? 0}
+                  </Box>
                 </Box>
-              </CardContent>
-            </Card>
-          ))}
-        </Box>
-      )}
+
+                <CardContent sx={{ p: 0, "&:last-child": { pb: 0 } }}>
+                  <Typography
+                    variant="h6"
+                    fontWeight={800}
+                    sx={{
+                      color: "#111827",
+                      fontSize: "1.05rem",
+                      minHeight: 32,
+                    }}
+                  >
+                    {product.name}
+                  </Typography>
+
+                  <Box
+                    display="flex"
+                    alignItems="center"
+                    justifyContent="space-between"
+                    mt={1.5}
+                  >
+                    <Box>
+                      <Typography
+                        variant="body2"
+                        sx={{ color: "#6b7280", mb: 0.2 }}
+                      >
+                        ราคา
+                      </Typography>
+                      <Typography
+                        fontWeight={800}
+                        sx={{
+                          fontSize: "1.1rem",
+                          color: "#111827",
+                        }}
+                      >
+                        {formatCurrency(product.price)}
+                      </Typography>
+                    </Box>
+
+                    <IconButton
+                      size="medium"
+                      disabled={(product.stockQty ?? 0) <= 0}
+                      sx={{
+                        width: 46,
+                        height: 46,
+                        background:
+                          "linear-gradient(135deg, #111827 0%, #000 100%)",
+                        color: "white",
+                        boxShadow: "0 8px 18px rgba(0,0,0,0.18)",
+                        "&:hover": {
+                          background:
+                            "linear-gradient(135deg, #000 0%, #111827 100%)",
+                          transform: "scale(1.05)",
+                        },
+                        "&.Mui-disabled": {
+                          background: "#e5e7eb",
+                          color: "#9ca3af",
+                          boxShadow: "none",
+                        },
+                      }}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        addToCart(product);
+                        focusBarcodeInput();
+                      }}
+                    >
+                      <AddRoundedIcon fontSize="medium" />
+                    </IconButton>
+                  </Box>
+                </CardContent>
+              </Card>
+            ))}
+          </Box>
+        )}
+      </Box>
 
       <Box sx={{ height: { md: 16 } }} />
 
