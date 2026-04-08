@@ -431,6 +431,8 @@ export default function POS({ cart, setCart }: Props) {
             alignItems: "center",
             justifyContent: "center",
             gap: 1.5,
+            minHeight: "calc(100vh - 260px)",
+            backdropFilter: "blur(4px)",
           }}
         >
           <Avatar
@@ -485,7 +487,8 @@ export default function POS({ cart, setCart }: Props) {
                 sx={{
                   height: 200,
                   borderRadius: 4,
-                  background: "linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%)",
+                  background:
+                    "linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%)",
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
