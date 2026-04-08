@@ -23,9 +23,6 @@ import { styled } from "@mui/material/styles";
 import type { AlertColor, SlideProps, SwitchProps } from "@mui/material";
 
 import SettingsRoundedIcon from "@mui/icons-material/SettingsRounded";
-import ReceiptLongRoundedIcon from "@mui/icons-material/ReceiptLongRounded";
-import PaymentsRoundedIcon from "@mui/icons-material/PaymentsRounded";
-import PrintRoundedIcon from "@mui/icons-material/PrintRounded";
 import SaveRoundedIcon from "@mui/icons-material/SaveRounded";
 import RestartAltRoundedIcon from "@mui/icons-material/RestartAltRounded";
 import QrCode2RoundedIcon from "@mui/icons-material/QrCode2Rounded";
@@ -266,7 +263,6 @@ export default function Settings() {
           >
             <CardContent sx={{ p: 0 }}>
               <SectionHeader
-                icon={<ReceiptLongRoundedIcon />}
                 title="ตั้งค่าใบเสร็จ"
                 subtitle="กำหนดรูปแบบการพิมพ์และข้อความที่แสดงบนใบเสร็จ"
               />
@@ -373,7 +369,6 @@ export default function Settings() {
           >
             <CardContent sx={{ p: 0 }}>
               <SectionHeader
-                icon={<PaymentsRoundedIcon />}
                 title="การชำระเงิน"
                 subtitle="เลือกวิธีชำระเงินที่ต้องการเปิดใช้ในระบบ"
               />
@@ -468,7 +463,6 @@ export default function Settings() {
           >
             <CardContent sx={{ p: 0 }}>
               <SectionHeader
-                icon={<PrintRoundedIcon />}
                 title="ตัวเลือกการใช้งาน"
                 subtitle="ตั้งค่าพฤติกรรมของโปรแกรมเวลาขายหน้าร้าน"
               />
@@ -680,11 +674,9 @@ export default function Settings() {
 }
 
 function SectionHeader({
-  icon,
   title,
   subtitle,
 }: {
-  icon: React.ReactNode;
   title: string;
   subtitle: string;
 }) {
@@ -697,28 +689,14 @@ function SectionHeader({
           background: "linear-gradient(180deg, #ffffff 0%, #fafafa 100%)",
         }}
       >
-        <Stack direction="row" spacing={1.5} alignItems="center">
-          <Avatar
-            sx={{
-              width: 42,
-              height: 42,
-              borderRadius: 3,
-              bgcolor: "#111827",
-              color: "#fff",
-            }}
-          >
-            {icon}
-          </Avatar>
-
-          <Box>
-            <Typography fontWeight={900} color="#111827">
-              {title}
-            </Typography>
-            <Typography variant="body2" color="text.secondary">
-              {subtitle}
-            </Typography>
-          </Box>
-        </Stack>
+        <Box>
+          <Typography fontWeight={900} color="#111827">
+            {title}
+          </Typography>
+          <Typography variant="body2" color="text.secondary">
+            {subtitle}
+          </Typography>
+        </Box>
       </Box>
 
       <Divider sx={{ borderColor: "#eef2f7" }} />
