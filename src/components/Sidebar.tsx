@@ -7,7 +7,6 @@ import {
   ListItemIcon,
   Toolbar,
   Box,
-  Typography,
   Divider,
   Tooltip,
 } from "@mui/material";
@@ -40,14 +39,12 @@ const buttonStyle = {
   transition: "all 0.2s ease",
 
   "&.Mui-selected": {
-    background:
-      "linear-gradient(135deg, #111827 0%, #000 100%)",
+    background: "linear-gradient(135deg, #111827 0%, #000 100%)",
     boxShadow: "0 10px 20px rgba(15, 23, 42, 0.25)",
   },
 
   "&:hover": {
     backgroundColor: "#f3f4f6",
-    transform: "translateY(-2px)",
   },
 };
 
@@ -55,9 +52,12 @@ const iconStyle = (active: boolean) => ({
   minWidth: "unset",
   color: active ? "#ffffff" : "#9ca3af",
   justifyContent: "center",
+  transition: "transform 0.2s ease",
 
   "& svg": {
     fontSize: 40,
+    transition: "transform 0.2s ease",
+    transform: active ? "scale(1.12)" : "scale(1)",
   },
 });
 
@@ -139,7 +139,12 @@ export default function Sidebar() {
               <ListItemButton
                 onClick={() => navigate(item.path)}
                 selected={active}
-                sx={buttonStyle}
+                sx={{
+                  ...buttonStyle,
+                  "&:hover .MuiListItemIcon-root svg": {
+                    transform: "scale(1.08)",
+                  },
+                }}
               >
                 <ListItemIcon sx={iconStyle(active)}>
                   {item.icon}
@@ -170,7 +175,12 @@ export default function Sidebar() {
               <ListItemButton
                 onClick={() => navigate(item.path)}
                 selected={active}
-                sx={buttonStyle}
+                sx={{
+                  ...buttonStyle,
+                  "&:hover .MuiListItemIcon-root svg": {
+                    transform: "scale(1.08)",
+                  },
+                }}
               >
                 <ListItemIcon sx={iconStyle(active)}>
                   {item.icon}
@@ -180,13 +190,6 @@ export default function Sidebar() {
           );
         })}
       </List>
-
-      {/* Footer */}
-      <Box sx={{ pb: 2 }}>
-        <Typography fontSize={13} color="#9ca3af">
-          v1.0
-        </Typography>
-      </Box>
     </Drawer>
   );
 }
