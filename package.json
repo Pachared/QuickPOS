@@ -46,6 +46,7 @@
   "build": {
     "appId": "com.quickpos.app",
     "productName": "QuickPOS",
+    "artifactName": "${productName}.${ext}",
     "directories": {
       "output": "release",
       "buildResources": "assets"
