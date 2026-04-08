@@ -95,7 +95,7 @@ export default function Sidebar() {
           width: "100%",
           display: "flex",
           justifyContent: "center",
-          py: "25px",
+          py: "10px",
         }}
       >
         <Box
@@ -103,7 +103,7 @@ export default function Sidebar() {
           src="assets/QuickPOS.svg"
           alt="QuickPOS"
           sx={{
-            height: 35,
+            height: 80,
             objectFit: "contain",
             filter: "grayscale(10%)",
           }}
