@@ -90,13 +90,24 @@ function SlideDownTransition(props: SlideProps) {
   );
 }
 
-function generateSku() {
-  const datePart = new Date()
-    .toISOString()
-    .slice(0, 10)
-    .replace(/-/g, "");
-  const randomPart = Math.random().toString(36).slice(2, 8).toUpperCase();
-  return `SKU-${datePart}-${randomPart}`;
+function generateSku(category?: string) {
+  const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+  let code = "";
+
+  for (let i = 0; i < 6; i++) {
+    code += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+
+  const prefixMap: Record<string, string> = {
+    เครื่องดื่ม: "DRK",
+    อาหาร: "FOD",
+    ของใช้: "GEN",
+    เครื่องเขียน: "STN",
+    สินค้าเบ็ดเตล็ด: "MSC",
+  };
+
+  const prefix = prefixMap[category || ""] || "PRD";
+  return `${prefix}-${code}`;
 }
 
 export default function Products() {
