@@ -240,9 +240,10 @@ export default function POS({ cart, setCart }: Props) {
         display: "flex",
         flexDirection: "column",
         overflow: "hidden",
+        position: "relative",
+        zIndex: 1,
         px: { xs: 0, md: 0 },
         pt: 0,
-        pb: { xs: 4, md: 6 },
       }}
     >
       <Box
@@ -410,6 +411,8 @@ export default function POS({ cart, setCart }: Props) {
           flex: 1,
           minHeight: 0,
           overflowY: "auto",
+          display: "flex",
+          flexDirection: "column",
           scrollbarWidth: "none",
           msOverflowStyle: "none",
           "&::-webkit-scrollbar": {
@@ -444,7 +447,8 @@ export default function POS({ cart, setCart }: Props) {
           <Paper
             elevation={0}
             sx={{
-              p: 5,
+              height: "100%",
+              minHeight: 0,
               borderRadius: 5,
               border: "1px solid #e5e7eb",
               background: "#fff",
@@ -453,7 +457,8 @@ export default function POS({ cart, setCart }: Props) {
               alignItems: "center",
               justifyContent: "center",
               gap: 1.5,
-              minHeight: "100%",
+              px: 5,
+              py: 5,
             }}
           >
             <Avatar
@@ -484,6 +489,7 @@ export default function POS({ cart, setCart }: Props) {
               md: "repeat(3, 1fr)",
             }}
             gap={2}
+            sx={{ pb: 3 }}
           >
             {displayProducts.map((product) => (
               <Card
@@ -496,7 +502,8 @@ export default function POS({ cart, setCart }: Props) {
                   boxShadow: "0 10px 24px rgba(15, 23, 42, 0.06)",
                   cursor: "pointer",
                   overflow: "hidden",
-                  background: "linear-gradient(180deg, #ffffff 0%, #fcfcfd 100%)",
+                  background:
+                    "linear-gradient(180deg, #ffffff 0%, #fcfcfd 100%)",
                   transition: "all 0.22s ease",
                   "&:hover": {
                     transform: "translateY(-4px)",
@@ -517,7 +524,9 @@ export default function POS({ cart, setCart }: Props) {
                     position: "relative",
                   }}
                 >
-                  <LocalMallRoundedIcon sx={{ fontSize: 54, color: "#9ca3af" }} />
+                  <LocalMallRoundedIcon
+                    sx={{ fontSize: 54, color: "#9ca3af" }}
+                  />
 
                   <Box
                     sx={{
@@ -548,7 +557,8 @@ export default function POS({ cart, setCart }: Props) {
                       borderRadius: 999,
                       fontSize: 12,
                       fontWeight: 700,
-                      color: (product.stockQty ?? 0) > 0 ? "#166534" : "#991b1b",
+                      color:
+                        (product.stockQty ?? 0) > 0 ? "#166534" : "#991b1b",
                       bgcolor:
                         (product.stockQty ?? 0) > 0
                           ? "rgba(220,252,231,0.92)"
@@ -634,8 +644,6 @@ export default function POS({ cart, setCart }: Props) {
           </Box>
         )}
       </Box>
-
-      <Box sx={{ height: { md: 16 } }} />
 
       <Snackbar
         open={snackbar.open}
