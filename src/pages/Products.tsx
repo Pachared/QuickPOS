@@ -194,7 +194,7 @@ export default function Products() {
   const openAdd = () => {
     setForm({
       ...emptyForm,
-      sku: generateSku(),
+      sku: generateSku(""),
     });
     setOpenForm(true);
   };
@@ -203,7 +203,7 @@ export default function Products() {
     setForm({
       ...emptyForm,
       ...product,
-      sku: product.sku?.trim() ? product.sku : generateSku(),
+      sku: product.sku?.trim() ? product.sku : generateSku(product.category),
     });
     setOpenForm(true);
   };
@@ -1086,7 +1086,7 @@ export default function Products() {
                     value={form.sku}
                     fullWidth
                     InputProps={{ readOnly: true }}
-                    helperText="ระบบสร้างให้อัตโนมัติ"
+                    helperText="ระบบสร้างให้อัตโนมัติตามหมวดหมู่สินค้า"
                     sx={{ "& .MuiOutlinedInput-root": { borderRadius: 4 } }}
                   />
                 </Grid>
@@ -1107,7 +1107,17 @@ export default function Products() {
                     select
                     label="หมวดหมู่"
                     value={form.category}
-                    onChange={(e) => updateForm("category", e.target.value)}
+                    onChange={(e) => {
+                      const category = e.target.value;
+                      setForm((prev) => ({
+                        ...prev,
+                        category,
+                        sku:
+                          prev.id === 0
+                            ? generateSku(category)
+                            : prev.sku?.trim() || generateSku(category),
+                      }));
+                    }}
                     fullWidth
                     required
                     sx={{ "& .MuiOutlinedInput-root": { borderRadius: 4 } }}
@@ -1228,10 +1238,7 @@ export default function Products() {
                     label="สถานะสินค้า"
                     value={form.status}
                     onChange={(e) =>
-                      updateForm(
-                        "status",
-                        e.target.value as Product["status"]
-                      )
+                      updateForm("status", e.target.value as Product["status"])
                     }
                     fullWidth
                     sx={{ "& .MuiOutlinedInput-root": { borderRadius: 4 } }}
