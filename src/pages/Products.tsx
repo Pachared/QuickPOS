@@ -36,11 +36,6 @@ import AddRoundedIcon from "@mui/icons-material/AddRounded";
 import Inventory2RoundedIcon from "@mui/icons-material/Inventory2Rounded";
 import SearchRoundedIcon from "@mui/icons-material/SearchRounded";
 import ChecklistRoundedIcon from "@mui/icons-material/ChecklistRounded";
-import LocalShippingRoundedIcon from "@mui/icons-material/LocalShippingRounded";
-import WarehouseRoundedIcon from "@mui/icons-material/WarehouseRounded";
-import InventoryRoundedIcon from "@mui/icons-material/InventoryRounded";
-import PaymentsRoundedIcon from "@mui/icons-material/PaymentsRounded";
-import InfoRoundedIcon from "@mui/icons-material/InfoRounded";
 import QrCodeScannerRoundedIcon from "@mui/icons-material/QrCodeScannerRounded";
 
 import { formatCurrency } from "../utils/format";
@@ -95,6 +90,15 @@ function SlideDownTransition(props: SlideProps) {
   );
 }
 
+function generateSku() {
+  const datePart = new Date()
+    .toISOString()
+    .slice(0, 10)
+    .replace(/-/g, "");
+  const randomPart = Math.random().toString(36).slice(2, 8).toUpperCase();
+  return `SKU-${datePart}-${randomPart}`;
+}
+
 export default function Products() {
   const [products, setProducts] = useState<Product[]>([]);
   const [openForm, setOpenForm] = useState(false);
@@ -108,6 +112,7 @@ export default function Products() {
 
   const [scanBarcode, setScanBarcode] = useState("");
   const scanInputRef = useRef<HTMLInputElement | null>(null);
+  const formBarcodeInputRef = useRef<HTMLInputElement | null>(null);
   const scanTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const [snackbar, setSnackbar] = useState<{
@@ -143,6 +148,13 @@ export default function Products() {
     });
   };
 
+  const focusFormBarcodeInput = () => {
+    requestAnimationFrame(() => {
+      formBarcodeInputRef.current?.focus();
+      formBarcodeInputRef.current?.select?.();
+    });
+  };
+
   const loadProducts = async () => {
     try {
       setLoading(true);
@@ -162,8 +174,17 @@ export default function Products() {
     focusScanInput();
   }, []);
 
+  useEffect(() => {
+    if (openForm) {
+      focusFormBarcodeInput();
+    }
+  }, [openForm]);
+
   const openAdd = () => {
-    setForm(emptyForm);
+    setForm({
+      ...emptyForm,
+      sku: generateSku(),
+    });
     setOpenForm(true);
   };
 
@@ -171,6 +192,7 @@ export default function Products() {
     setForm({
       ...emptyForm,
       ...product,
+      sku: product.sku?.trim() ? product.sku : generateSku(),
     });
     setOpenForm(true);
   };
@@ -251,7 +273,7 @@ export default function Products() {
       return;
     }
     if (!form.sku.trim()) {
-      showSnackbar("กรุณากรอกรหัสสินค้า", "warning");
+      showSnackbar("ไม่สามารถสร้างรหัสสินค้าอัตโนมัติได้", "warning");
       return;
     }
     if (!form.name.trim()) {
@@ -1029,24 +1051,14 @@ export default function Products() {
                 WebkitBackdropFilter: "blur(10px)",
               }}
             >
-              <Stack direction="row" spacing={1} alignItems="center" mb={2}>
-                <Avatar
-                  sx={{
-                    width: 34,
-                    height: 34,
-                    borderRadius: 3,
-                    bgcolor: "#f3f4f6",
-                    color: "#111827",
-                  }}
-                >
-                  <InfoRoundedIcon fontSize="small" />
-                </Avatar>
-                <Typography fontWeight={900}>ข้อมูลหลักสินค้า</Typography>
-              </Stack>
+              <Typography fontWeight={900} mb={2}>
+                ข้อมูลหลักสินค้า
+              </Typography>
 
               <Grid container spacing={2}>
                 <Grid size={{ xs: 12, md: 6 }}>
                   <TextField
+                    inputRef={formBarcodeInputRef}
                     label="บาร์โค้ด"
                     value={form.barcode}
                     onChange={(e) => updateForm("barcode", e.target.value)}
@@ -1061,10 +1073,9 @@ export default function Products() {
                   <TextField
                     label="รหัสสินค้า (SKU)"
                     value={form.sku}
-                    onChange={(e) => updateForm("sku", e.target.value)}
                     fullWidth
-                    required
-                    helperText="รหัสอ้างอิงสินค้าในระบบ"
+                    InputProps={{ readOnly: true }}
+                    helperText="ระบบสร้างให้อัตโนมัติ"
                     sx={{ "& .MuiOutlinedInput-root": { borderRadius: 4 } }}
                   />
                 </Grid>
@@ -1128,20 +1139,9 @@ export default function Products() {
                 WebkitBackdropFilter: "blur(10px)",
               }}
             >
-              <Stack direction="row" spacing={1} alignItems="center" mb={2}>
-                <Avatar
-                  sx={{
-                    width: 34,
-                    height: 34,
-                    borderRadius: 3,
-                    bgcolor: "#f3f4f6",
-                    color: "#111827",
-                  }}
-                >
-                  <PaymentsRoundedIcon fontSize="small" />
-                </Avatar>
-                <Typography fontWeight={900}>ราคาและสต๊อก</Typography>
-              </Stack>
+              <Typography fontWeight={900} mb={2}>
+                ราคาและสต๊อก
+              </Typography>
 
               <Grid container spacing={2}>
                 <Grid size={{ xs: 12, md: 6 }}>
@@ -1175,11 +1175,6 @@ export default function Products() {
                     value={form.cost}
                     onChange={(e) => updateForm("cost", Number(e.target.value))}
                     fullWidth
-                    helperText={
-                      form.cost > 0
-                        ? `ต้นทุน: ${formatCurrency(form.cost)}`
-                        : "ใส่ 0 ได้"
-                    }
                     sx={{ "& .MuiOutlinedInput-root": { borderRadius: 4 } }}
                     InputProps={{
                       endAdornment: (
@@ -1191,7 +1186,7 @@ export default function Products() {
 
                 <Grid size={{ xs: 12, md: 6 }}>
                   <TextField
-                    label="จำนวนเริ่มต้นในสต๊อก"
+                    label="จำนวนสต๊อก"
                     type="number"
                     value={form.stockQty}
                     onChange={(e) =>
@@ -1199,15 +1194,7 @@ export default function Products() {
                     }
                     fullWidth
                     required
-                    helperText="เพิ่มสินค้าใหม่ครั้งแรกใส่จำนวนเริ่มต้นได้"
                     sx={{ "& .MuiOutlinedInput-root": { borderRadius: 4 } }}
-                    InputProps={{
-                      endAdornment: (
-                        <InputAdornment position="end">
-                          {form.unit || "ชิ้น"}
-                        </InputAdornment>
-                      ),
-                    }}
                   />
                 </Grid>
 
@@ -1220,19 +1207,11 @@ export default function Products() {
                       updateForm("minStock", Number(e.target.value))
                     }
                     fullWidth
-                    helperText="ถ้าต่ำกว่าหรือเท่าจะแจ้งว่าใกล้หมด"
                     sx={{ "& .MuiOutlinedInput-root": { borderRadius: 4 } }}
-                    InputProps={{
-                      endAdornment: (
-                        <InputAdornment position="end">
-                          {form.unit || "ชิ้น"}
-                        </InputAdornment>
-                      ),
-                    }}
                   />
                 </Grid>
 
-                <Grid size={{ xs: 12, md: 6 }}>
+                <Grid size={{ xs: 12 }}>
                   <TextField
                     select
                     label="สถานะสินค้า"
@@ -1255,80 +1234,6 @@ export default function Products() {
                 </Grid>
               </Grid>
             </Box>
-
-            <Box
-              sx={{
-                p: 2,
-                borderRadius: 4,
-                border: "1px solid #e5e7eb",
-                background: "rgba(255,255,255,0.82)",
-                backdropFilter: "blur(10px)",
-                WebkitBackdropFilter: "blur(10px)",
-              }}
-            >
-              <Stack direction="row" spacing={1} alignItems="center" mb={2}>
-                <Avatar
-                  sx={{
-                    width: 34,
-                    height: 34,
-                    borderRadius: 3,
-                    bgcolor: "#f3f4f6",
-                    color: "#111827",
-                  }}
-                >
-                  <LocalShippingRoundedIcon fontSize="small" />
-                </Avatar>
-                <Typography fontWeight={900}>ข้อมูลเพิ่มเติม</Typography>
-              </Stack>
-
-              <Grid container spacing={2}>
-                <Grid size={{ xs: 12, md: 6 }}>
-                  <TextField
-                    label="ซัพพลายเออร์"
-                    value={form.supplier}
-                    onChange={(e) => updateForm("supplier", e.target.value)}
-                    fullWidth
-                    sx={{ "& .MuiOutlinedInput-root": { borderRadius: 4 } }}
-                    InputProps={{
-                      startAdornment: (
-                        <InputAdornment position="start">
-                          <LocalShippingRoundedIcon sx={{ color: "#6b7280" }} />
-                        </InputAdornment>
-                      ),
-                    }}
-                  />
-                </Grid>
-
-                <Grid size={{ xs: 12, md: 6 }}>
-                  <TextField
-                    label="ตำแหน่งจัดเก็บ"
-                    value={form.location}
-                    onChange={(e) => updateForm("location", e.target.value)}
-                    fullWidth
-                    sx={{ "& .MuiOutlinedInput-root": { borderRadius: 4 } }}
-                    InputProps={{
-                      startAdornment: (
-                        <InputAdornment position="start">
-                          <WarehouseRoundedIcon sx={{ color: "#6b7280" }} />
-                        </InputAdornment>
-                      ),
-                    }}
-                  />
-                </Grid>
-
-                <Grid size={{ xs: 12 }}>
-                  <TextField
-                    label="รายละเอียดสินค้า"
-                    value={form.description}
-                    onChange={(e) => updateForm("description", e.target.value)}
-                    fullWidth
-                    multiline
-                    minRows={3}
-                    sx={{ "& .MuiOutlinedInput-root": { borderRadius: 4 } }}
-                  />
-                </Grid>
-              </Grid>
-            </Box>
           </Stack>
         </DialogContent>
 
@@ -1346,12 +1251,18 @@ export default function Products() {
           <Button
             onClick={closeForm}
             disabled={saving}
+            variant="outlined"
             sx={{
               borderRadius: 3,
               px: 2.2,
               textTransform: "none",
               fontWeight: 700,
               color: "#475569",
+              borderColor: "#cbd5e1",
+              "&:hover": {
+                borderColor: "#94a3b8",
+                backgroundColor: "#f8fafc",
+              },
             }}
           >
             ยกเลิก
@@ -1362,11 +1273,7 @@ export default function Products() {
             onClick={saveProduct}
             disabled={saving}
             startIcon={
-              saving ? (
-                <CircularProgress size={16} color="inherit" />
-              ) : (
-                <InventoryRoundedIcon />
-              )
+              saving ? <CircularProgress size={16} color="inherit" /> : undefined
             }
             sx={{
               borderRadius: 3,
@@ -1374,7 +1281,6 @@ export default function Products() {
               textTransform: "none",
               fontWeight: 800,
               boxShadow: "none",
-              background: "linear-gradient(135deg, #111827 0%, #374151 100%)",
             }}
           >
             {saving
