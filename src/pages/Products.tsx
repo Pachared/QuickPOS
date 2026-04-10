@@ -903,7 +903,7 @@ export default function Products() {
 
               {!loading && filteredProducts.length === 0 && (
                 <TableRow>
-                  <TableCell colSpan={5} align="center" sx={{ py: 8 }}>
+                  <TableCell colSpan={5} align="center" sx={{ py: 14, borderBottom: "none", }}>
                     <Stack spacing={1.5} alignItems="center">
                       <Avatar
                         sx={{
