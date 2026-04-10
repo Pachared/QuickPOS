@@ -244,6 +244,7 @@ export default function POS({ cart, setCart }: Props) {
         zIndex: 1,
         px: { xs: 0, md: 0 },
         pt: 0,
+        borderRadius: "25px",
       }}
     >
       <Box
