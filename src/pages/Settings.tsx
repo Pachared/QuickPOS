@@ -42,6 +42,16 @@ const defaultSettings: PosSettings = {
   soundOnCheckout: true,
 };
 
+const hiddenScrollbarSx = {
+  "&::-webkit-scrollbar": {
+    width: 0,
+    height: 0,
+    display: "none",
+  },
+  scrollbarWidth: "none",
+  msOverflowStyle: "none",
+};
+
 const IOSSwitch = styled((props: SwitchProps) => (
   <Switch focusVisibleClassName=".Mui-focusVisible" disableRipple {...props} />
 ))(({ theme }) => ({
@@ -206,7 +216,14 @@ export default function Settings() {
   };
 
   return (
-    <Box sx={{ minHeight: "100%" }}>
+    <Box
+      sx={{
+        minHeight: "100%",
+        height: "100%",
+        overflow: "auto",
+        ...hiddenScrollbarSx,
+      }}
+    >
       <Box
         ref={headerRef}
         sx={{
@@ -240,7 +257,8 @@ export default function Settings() {
               ตั้งค่าระบบ
             </Typography>
             <Typography variant="body2" sx={{ opacity: 0.82 }}>
-              ตั้งค่าการพิมพ์ การชำระเงิน และตัวเลือกการใช้งานสำหรับเครื่องขายหน้าร้าน
+              ตั้งค่าการพิมพ์ การชำระเงิน
+              และตัวเลือกการใช้งานสำหรับเครื่องขายหน้าร้าน
             </Typography>
           </Box>
         </Stack>
@@ -249,9 +267,12 @@ export default function Settings() {
       <Box sx={{ height: `${headerHeight + 16}px` }} />
 
       <Box
-        display="grid"
-        gridTemplateColumns={{ xs: "1fr", xl: "1.2fr 0.8fr" }}
-        gap={2}
+        sx={{
+          display: "grid",
+          gridTemplateColumns: { xs: "1fr", xl: "1.2fr 0.8fr" },
+          gap: 2,
+          pb: 2,
+        }}
       >
         <Stack spacing={2}>
           <Card
@@ -566,7 +587,10 @@ export default function Settings() {
                 }}
               >
                 <Stack spacing={1.2}>
-                  <SummaryRow label="ชื่อร้าน" value={settings.shopName || "-"} />
+                  <SummaryRow
+                    label="ชื่อร้าน"
+                    value={settings.shopName || "-"}
+                  />
                   <SummaryRow
                     label="ขนาดกระดาษ"
                     value={settings.printerPaperSize}
