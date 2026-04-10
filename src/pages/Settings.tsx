@@ -50,6 +50,7 @@ const hiddenScrollbarSx = {
   },
   scrollbarWidth: "none",
   msOverflowStyle: "none",
+  borderRadius: "25px",
 };
 
 const IOSSwitch = styled((props: SwitchProps) => (
