@@ -555,7 +555,7 @@ export default function Orders({ orders }: OrdersProps) {
 
               {orders.length === 0 && (
                 <TableRow>
-                  <TableCell colSpan={6} align="center" sx={{ py: 8 }}>
+                  <TableCell colSpan={6} align="center" sx={{ py: 14, borderBottom: "none", }}>
                     <Stack spacing={1.5} alignItems="center">
                       <Avatar
                         sx={{
