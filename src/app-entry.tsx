@@ -1,16 +1,17 @@
 import ReactDOM from "react-dom/client";
-import App from "./App";
+import AppShell from "./app-shell";
 import { HashRouter } from "react-router-dom";
 
 import { ThemeProvider } from "@mui/material/styles";
 import CssBaseline from "@mui/material/CssBaseline";
-import theme from "./theme/theme";
+import appTheme from "./theme/app-theme";
+import "./global-styles.css";
 
 ReactDOM.createRoot(document.getElementById("root")!).render(
-  <ThemeProvider theme={theme}>
+  <ThemeProvider theme={appTheme}>
     <CssBaseline />
     <HashRouter>
-      <App />
+      <AppShell />
     </HashRouter>
   </ThemeProvider>
 );

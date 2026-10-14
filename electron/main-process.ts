@@ -1,10 +1,10 @@
 import { app, BrowserWindow } from "electron";
 import path from "path";
-import { registerProductIpc } from "./ipc/products";
-import { registerOrderIpc } from "./ipc/orders";
-import { registerSettingsIpc } from "./ipc/settings";
-import { registerCustomerDisplayIpc } from "./ipc/customerDisplay";
-import "./database/sqlite";
+import { registerProductIpc } from "./ipc/product-ipc-handlers";
+import { registerOrderIpc } from "./ipc/order-ipc-handlers";
+import { registerSettingsIpc } from "./ipc/settings-ipc-handlers";
+import { registerCustomerDisplayIpc } from "./ipc/customer-display-ipc-handlers";
+import "./database/pos-database";
 
 let mainWindow: BrowserWindow | null = null;
 
@@ -28,7 +28,7 @@ function createWindow() {
     height: 900,
     icon: getAppIcon(),
     webPreferences: {
-      preload: path.join(__dirname, "preload.js"),
+      preload: path.join(__dirname, "pos-preload-bridge.js"),
       contextIsolation: true,
       nodeIntegration: false,
     },

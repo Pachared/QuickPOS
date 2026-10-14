@@ -5,7 +5,7 @@ import {
   resetPosSettings,
   savePosSettings,
   type PosSettingsRow,
-} from "../database/sqlite";
+} from "../database/pos-database";
 
 function validateSettings(payload: unknown): PosSettingsRow {
   const input = payload && typeof payload === "object" ? payload as Record<string, unknown> : {};

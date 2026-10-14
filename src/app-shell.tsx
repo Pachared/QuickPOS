@@ -2,17 +2,17 @@ import { Box } from "@mui/material";
 import { Routes, Route, useLocation } from "react-router-dom";
 import { lazy, Suspense, useCallback, useEffect, useState } from "react";
 
-import Sidebar from "./components/Sidebar";
-import Cart from "./components/Cart";
+import AppNavigation from "./components/app-navigation";
+import PosCartPanel from "./components/pos-cart-panel";
 
-const POS = lazy(() => import("./pages/POS"));
-const Products = lazy(() => import("./pages/Products"));
-const Orders = lazy(() => import("./pages/Orders"));
-const Settings = lazy(() => import("./pages/Settings"));
+const PosScreen = lazy(() => import("./pages/pos-screen"));
+const ProductCatalogScreen = lazy(() => import("./pages/product-catalog-screen"));
+const SalesHistoryScreen = lazy(() => import("./pages/sales-history-screen"));
+const AppSettingsScreen = lazy(() => import("./pages/app-settings-screen"));
 
-import type { CartItem, Order } from "./types/pos";
+import type { CartItem, Order } from "./types/pos-models";
 
-export default function App() {
+export default function AppShell() {
   const [cart, setCart] = useState<CartItem[]>([]);
   const [orders, setOrders] = useState<Order[]>([]);
   const location = useLocation();
@@ -58,7 +58,7 @@ export default function App() {
         overflow: isProductsPage ? "hidden" : "auto",
       }}
     >
-      <Sidebar />
+      <AppNavigation />
 
       <Box
         sx={{
@@ -76,16 +76,16 @@ export default function App() {
       >
         <Suspense fallback={<Box flexGrow={1} />}>
           <Routes>
-            <Route path="/" element={<POS cart={cart} setCart={setCart} />} />
-            <Route path="/products" element={<Products />} />
-            <Route path="/orders" element={<Orders orders={orders} />} />
-            <Route path="/settings" element={<Settings />} />
+            <Route path="/" element={<PosScreen cart={cart} setCart={setCart} />} />
+            <Route path="/products" element={<ProductCatalogScreen />} />
+            <Route path="/orders" element={<SalesHistoryScreen orders={orders} />} />
+            <Route path="/settings" element={<AppSettingsScreen />} />
           </Routes>
         </Suspense>
       </Box>
 
       {isPosPage ? (
-        <Cart
+        <PosCartPanel
           cart={cart}
           removeItem={removeItem}
           clearCart={clearCart}

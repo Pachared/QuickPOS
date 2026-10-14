@@ -1,6 +1,6 @@
 import { Box, Typography, Card, CardContent } from "@mui/material";
 
-export default function Reports() {
+export default function SalesReportScreen() {
   return (
     <Box>
       <Typography variant="h5" fontWeight={600} sx={{ mb: 3 }}>

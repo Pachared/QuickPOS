@@ -26,7 +26,7 @@ import SettingsRoundedIcon from "@mui/icons-material/SettingsRounded";
 import SaveRoundedIcon from "@mui/icons-material/SaveRounded";
 import RestartAltRoundedIcon from "@mui/icons-material/RestartAltRounded";
 import QrCode2RoundedIcon from "@mui/icons-material/QrCode2Rounded";
-import type { PosSettings } from "../types/pos";
+import type { PosSettings } from "../types/pos-models";
 
 const defaultSettings: PosSettings = {
   shopName: "QuickPOS Store",
@@ -105,7 +105,7 @@ function SlideDownTransition(props: SlideProps) {
   return <Slide {...props} direction="down" />;
 }
 
-export default function Settings() {
+export default function AppSettingsScreen() {
   const [settings, setSettings] = useState<PosSettings>(defaultSettings);
   const [headerHeight, setHeaderHeight] = useState(0);
   const headerRef = useRef<HTMLDivElement | null>(null);

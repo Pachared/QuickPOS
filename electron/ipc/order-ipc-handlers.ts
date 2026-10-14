@@ -1,5 +1,5 @@
 import { ipcMain } from "electron";
-import { createOrder, listOrders, type OrderInput } from "../database/sqlite";
+import { createOrder, listOrders, type OrderInput } from "../database/pos-database";
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null;

@@ -42,8 +42,8 @@ import type {
   PaymentMethod,
   PosSettings,
   CustomerDisplayPayload,
-} from "../types/pos";
-import { formatCurrency } from "../utils/format";
+} from "../types/pos-models";
+import { formatCurrency } from "../utils/currency-format";
 
 const drawerWidth = 360;
 const CASH_TYPES = [20, 50, 100, 500, 1000];
@@ -100,7 +100,7 @@ function formatPreviewReceiptNo(date?: Date) {
   return `RC-${yyyy}${mm}${dd}-000000`;
 }
 
-export default function Cart({
+export default function PosCartPanel({
   cart,
   removeItem,
   clearCart,

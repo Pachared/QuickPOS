@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { calculateOrderTotal, roundMoney } from "../electron/orderMath";
+import { calculateOrderTotal, roundMoney } from "../electron/order-calculations";
 
 test("roundMoney avoids floating-point totals in receipts", () => {
   assert.equal(roundMoney(0.1 + 0.2), 0.3);

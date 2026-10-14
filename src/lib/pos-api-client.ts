@@ -1,23 +1,8 @@
-export interface Product {
-  id: number;
-  barcode: string;
-  sku: string;
-  name: string;
-  category: string;
-  unit: string;
-  price: number;
-  cost: number;
-  stockQty: number;
-  minStock: number;
-  supplier: string;
-  location: string;
-  description: string;
-  status: "active" | "inactive";
-  createdAt?: string;
-  updatedAt?: string;
-}
+import type { Product, ProductInput } from "../types/pos-models";
 
-export type ProductPayload = Omit<Product, "id" | "createdAt" | "updatedAt">;
+export type { Product } from "../types/pos-models";
+
+export type ProductPayload = ProductInput;
 
 function ensurePosApi() {
   if (!window.pos) {

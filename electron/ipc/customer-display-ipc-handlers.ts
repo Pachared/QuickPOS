@@ -31,11 +31,11 @@ function resolveCustomerDisplayHtmlPath() {
   const appPath = app.getAppPath();
 
   const candidates = [
-    path.join(cwd, "electron", "customer-display.html"),
-    path.join(cwd, "dist-electron", "customer-display.html"),
-    path.join(appPath, "electron", "customer-display.html"),
-    path.join(appPath, "dist-electron", "customer-display.html"),
-    path.join(__dirname, "../customer-display.html"),
+    path.join(cwd, "electron", "customer-display-window.html"),
+    path.join(cwd, "dist-electron", "customer-display-window.html"),
+    path.join(appPath, "electron", "customer-display-window.html"),
+    path.join(appPath, "dist-electron", "customer-display-window.html"),
+    path.join(__dirname, "../customer-display-window.html"),
   ];
 
   const resolved = pickExistingPath(candidates);
@@ -48,9 +48,9 @@ function resolveCustomerDisplayPreloadPath() {
   const appPath = app.getAppPath();
 
   const candidates = [
-    path.join(cwd, "dist-electron", "customer-display-preload.js"),
-    path.join(appPath, "dist-electron", "customer-display-preload.js"),
-    path.join(__dirname, "../customer-display-preload.js"),
+    path.join(cwd, "dist-electron", "customer-display-bridge.js"),
+    path.join(appPath, "dist-electron", "customer-display-bridge.js"),
+    path.join(__dirname, "../customer-display-bridge.js"),
   ];
 
   const resolved = pickExistingPath(candidates);

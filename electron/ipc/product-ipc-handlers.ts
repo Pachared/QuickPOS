@@ -6,7 +6,7 @@ import {
   listProducts,
   updateProduct,
   type ProductInput,
-} from "../database/sqlite";
+} from "../database/pos-database";
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null;

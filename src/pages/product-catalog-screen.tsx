@@ -38,12 +38,12 @@ import SearchRoundedIcon from "@mui/icons-material/SearchRounded";
 import ChecklistRoundedIcon from "@mui/icons-material/ChecklistRounded";
 import QrCodeScannerRoundedIcon from "@mui/icons-material/QrCodeScannerRounded";
 
-import { formatCurrency } from "../utils/format";
+import { formatCurrency } from "../utils/currency-format";
 import {
   posApi,
   type Product as ApiProduct,
   type ProductPayload,
-} from "../lib/posApi";
+} from "../lib/pos-api-client";
 
 type Product = ApiProduct;
 type StockFilter = "all" | "low" | "out";
@@ -110,7 +110,7 @@ function generateSku(category?: string) {
   return `${prefix}-${code}`;
 }
 
-export default function Products() {
+export default function ProductCatalogScreen() {
   const [products, setProducts] = useState<Product[]>([]);
   const [openForm, setOpenForm] = useState(false);
   const [openDelete, setOpenDelete] = useState(false);

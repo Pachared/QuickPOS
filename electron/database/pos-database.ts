@@ -2,7 +2,7 @@ import Database from "better-sqlite3";
 import { app } from "electron";
 import fs from "fs";
 import path from "path";
-import { calculateOrderTotal, roundMoney } from "../orderMath";
+import { calculateOrderTotal, roundMoney } from "../order-calculations";
 
 export type ProductStatus = "active" | "inactive";
 export type PaymentMethod = "cash" | "transfer";

@@ -24,8 +24,8 @@ import QrCodeScannerRoundedIcon from "@mui/icons-material/QrCodeScannerRounded";
 import LocalMallRoundedIcon from "@mui/icons-material/LocalMallRounded";
 import StorefrontRoundedIcon from "@mui/icons-material/StorefrontRounded";
 
-import type { CartItem } from "../types/pos";
-import { formatCurrency } from "../utils/format";
+import type { CartItem } from "../types/pos-models";
+import { formatCurrency } from "../utils/currency-format";
 
 interface Product {
   id: number;
@@ -47,7 +47,7 @@ function SlideDownTransition(props: SlideProps) {
   return <Slide {...props} direction="down" />;
 }
 
-export default function POS({ cart, setCart }: Props) {
+export default function PosScreen({ cart, setCart }: Props) {
   const [barcode, setBarcode] = useState("");
   const [products, setProducts] = useState<Product[]>([]);
   const [category, setCategory] = useState("ทั้งหมด");

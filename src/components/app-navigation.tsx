@@ -60,7 +60,7 @@ const iconStyle = (active: boolean) => ({
   },
 });
 
-export default function Sidebar() {
+export default function AppNavigation() {
   const navigate = useNavigate();
   const location = useLocation();
 

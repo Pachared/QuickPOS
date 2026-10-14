@@ -30,8 +30,8 @@ import PaymentsRoundedIcon from "@mui/icons-material/PaymentsRounded";
 import AccountBalanceRoundedIcon from "@mui/icons-material/AccountBalanceRounded";
 import PrintRoundedIcon from "@mui/icons-material/PrintRounded";
 
-import type { Order } from "../types/pos";
-import { formatCurrency } from "../utils/format";
+import type { Order } from "../types/pos-models";
+import { formatCurrency } from "../utils/currency-format";
 
 interface OrdersProps {
   orders: Order[];
@@ -64,7 +64,7 @@ const summaryCardSx = {
   boxShadow: "0 8px 24px rgba(15, 23, 42, 0.05)",
 };
 
-export default function Orders({ orders }: OrdersProps) {
+export default function SalesHistoryScreen({ orders }: OrdersProps) {
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [openDetail, setOpenDetail] = useState(false);
 
