@@ -6,8 +6,11 @@
   "scripts": {
     "dev": "concurrently \"vite\" \"tsc -p electron --watch\" \"wait-on http://localhost:5173 && electron dist-electron/main.js\"",
     "build:electron": "tsc -p electron",
-    "build": "npm run build:electron && vite build",
-    "copy:customer-display": "node -e \"require('fs').copyFileSync('electron/customer-display.html','dist-electron/customer-display.html')\"",
+    "build": "npm run build:electron && npm run copy:customer-display && vite build",
+    "copy:customer-display": "node -e \"const fs=require('fs'); for(const f of ['customer-display.html','customer-display.css','customer-display.js']) fs.copyFileSync('electron/'+f,'dist-electron/'+f)\"",
+    "lint": "eslint . --max-warnings=0",
+    "typecheck": "tsc -p tsconfig.app.json && tsc -p electron --noEmit",
+    "test": "tsx --test tests/*.test.ts",
     "dist": "npm run build && electron-builder"
   },
   "dependencies": {
@@ -38,6 +41,7 @@
     "eslint-plugin-react-hooks": "^7.0.1",
     "eslint-plugin-react-refresh": "^0.5.2",
     "globals": "^17.4.0",
+    "tsx": "^4.23.15",
     "typescript": "~5.9.3",
     "typescript-eslint": "^8.56.1",
     "vite": "^7.3.1",

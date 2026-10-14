@@ -1,8 +1,24 @@
 import { ipcMain } from "electron";
 import { createOrder, listOrders, type OrderInput } from "../database/sqlite";
 
-function validateOrderInput(payload: any): OrderInput {
-  if (!payload || typeof payload !== "object") {
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null;
+}
+
+function positiveInteger(value: unknown, message: string) {
+  const number = Number(value);
+  if (!Number.isSafeInteger(number) || number <= 0) throw new Error(message);
+  return number;
+}
+
+function nonNegativeAmount(value: unknown, message: string) {
+  const number = Number(value);
+  if (!Number.isFinite(number) || number < 0) throw new Error(message);
+  return Math.round((number + Number.EPSILON) * 100) / 100;
+}
+
+function validateOrderInput(payload: unknown): OrderInput {
+  if (!isRecord(payload)) {
     throw new Error("ข้อมูลออเดอร์ไม่ถูกต้อง");
   }
 
@@ -10,60 +26,21 @@ function validateOrderInput(payload: any): OrderInput {
     throw new Error("ไม่พบรายการสินค้าในออเดอร์");
   }
 
-  const paymentMethod =
-    payload.paymentMethod === "transfer" ? "transfer" : "cash";
-
-  const total = Number(payload.total ?? 0);
-  const items = Number(payload.items ?? 0);
-  const receivedAmount = Number(payload.receivedAmount ?? 0);
-  const change = Number(payload.change ?? 0);
-
-  if (total <= 0) {
-    throw new Error("ยอดรวมออเดอร์ต้องมากกว่า 0");
+  if (payload.paymentMethod !== "cash" && payload.paymentMethod !== "transfer") {
+    throw new Error("วิธีชำระเงินไม่ถูกต้อง");
   }
 
-  if (items <= 0) {
-    throw new Error("จำนวนสินค้าต้องมากกว่า 0");
-  }
-
-  const products = payload.products.map((item: any) => {
-    const id = Number(item.id);
-    const qty = Number(item.qty);
-    const price = Number(item.price);
-
-    if (!id || id <= 0) {
-      throw new Error("พบสินค้าในออเดอร์ที่ไม่มี id ถูกต้อง");
-    }
-
-    if (!String(item.name || "").trim()) {
-      throw new Error("พบสินค้าในออเดอร์ที่ไม่มีชื่อสินค้า");
-    }
-
-    if (qty <= 0) {
-      throw new Error("จำนวนสินค้าต้องมากกว่า 0");
-    }
-
-    if (price < 0) {
-      throw new Error("ราคาสินค้าต้องไม่ติดลบ");
-    }
-
+  const products = payload.products.map((item) => {
+    if (!isRecord(item)) throw new Error("ข้อมูลสินค้าในออเดอร์ไม่ถูกต้อง");
     return {
-      id,
-      name: String(item.name).trim(),
-      qty,
-      price,
+      id: positiveInteger(item.id, "พบสินค้าในออเดอร์ที่ไม่มี id ถูกต้อง"),
+      qty: positiveInteger(item.qty, "จำนวนสินค้าต้องมากกว่า 0"),
     };
   });
 
   return {
-    total,
-    items,
-    paymentMethod,
-    receivedAmount,
-    change,
-    date:
-      String(payload.date || "").trim() ||
-      new Date().toLocaleString("sv-SE").replace("T", " ").slice(0, 16),
+    paymentMethod: payload.paymentMethod,
+    receivedAmount: nonNegativeAmount(payload.receivedAmount, "จำนวนเงินรับไม่ถูกต้อง"),
     products,
   };
 }

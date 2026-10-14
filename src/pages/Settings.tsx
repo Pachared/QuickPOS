@@ -131,7 +131,7 @@ export default function Settings() {
   };
 
   const handleCloseSnackbar = (
-    _: Event | React.SyntheticEvent<any, Event>,
+    _: Event | React.SyntheticEvent,
     reason?: string
   ) => {
     if (reason === "clickaway") return;

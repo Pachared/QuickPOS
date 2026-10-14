@@ -202,7 +202,7 @@ export default function Cart({
   };
 
   const handleCloseSnackbar = (
-    _: Event | React.SyntheticEvent<any, Event>,
+    _: Event | React.SyntheticEvent,
     reason?: string
   ) => {
     if (reason === "clickaway") return;
@@ -273,6 +273,8 @@ export default function Cart({
 
   useEffect(() => {
     void loadSettings();
+    // load once when the persistent cart is mounted.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
@@ -338,6 +340,8 @@ export default function Cart({
     }
 
     void closeCustomerDisplay();
+    // The display helpers intentionally use the state captured for this update.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     openCheckout,
     paymentMethod,
@@ -357,6 +361,8 @@ export default function Cart({
       receiptHeaderNote: settings.receiptHeaderNote,
       isGeneratingQr,
     } as Partial<CustomerDisplayPayload>);
+    // The display helper intentionally uses the state captured for this update.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     qrDataUrl,
     isGeneratingQr,
@@ -503,29 +509,28 @@ export default function Cart({
     }
   };
 
-  const buildReceiptHtml = () => {
-    const receiptOrder = savedOrder;
-    const receiptItems = receiptOrder?.products ?? [];
+  const buildReceiptHtml = (receiptOrder: Order) => {
+    const receiptItems = receiptOrder.products;
     const paperWidth = settings.printerPaperSize === "58mm" ? "58mm" : "80mm";
 
     const paidAmount =
-      receiptOrder?.paymentMethod === "cash"
+      receiptOrder.paymentMethod === "cash"
         ? receiptOrder.receivedAmount
-        : receiptOrder?.total ?? total;
+        : receiptOrder.total;
 
     const changeAmount =
-      receiptOrder?.paymentMethod === "cash" ? receiptOrder.change : 0;
+      receiptOrder.paymentMethod === "cash" ? receiptOrder.change : 0;
 
     const paidLabel =
-      receiptOrder?.paymentMethod === "cash" ? "เงินสด" : "โอนเงิน";
+      receiptOrder.paymentMethod === "cash" ? "เงินสด" : "โอนเงิน";
 
     const finalReceiptNo =
-      receiptOrder?.id != null
+      receiptOrder.id != null
         ? formatReceiptNo(receiptOrder.id, receiptOrder.date)
         : previewReceiptNo;
 
     const receiptDate =
-      receiptOrder?.date != null
+      receiptOrder.date != null
         ? new Date(receiptOrder.date).toLocaleString("th-TH")
         : new Date().toLocaleString("th-TH");
 
@@ -641,10 +646,10 @@ export default function Cart({
           <div class="divider"></div>
 
           <div class="summary-row"><span>จำนวนสินค้า</span><span>${
-            receiptOrder?.items ?? totalQty
+            receiptOrder.items
           } ชิ้น</span></div>
           <div class="summary-row total"><span>ยอดรวม</span><span>${formatCurrency(
-            receiptOrder?.total ?? total
+            receiptOrder.total
           )}</span></div>
           <div class="summary-row"><span>วิธีชำระ</span><span>${paidLabel}</span></div>
           <div class="summary-row"><span>รับเงิน</span><span>${formatCurrency(
@@ -662,12 +667,7 @@ export default function Cart({
     `;
   };
 
-  const handlePrintReceipt = () => {
-    if (!savedOrder) {
-      showSnackbar("กรุณายืนยันการชำระเงินก่อน", "warning");
-      return;
-    }
-
+  const printReceipt = (receiptOrder: Order) => {
     const copies = Math.max(1, settings.copyCount);
 
     for (let i = 0; i < copies; i += 1) {
@@ -678,7 +678,7 @@ export default function Cart({
       }
 
       receiptWindow.document.open();
-      receiptWindow.document.write(buildReceiptHtml());
+      receiptWindow.document.write(buildReceiptHtml(receiptOrder));
       receiptWindow.document.close();
 
       receiptWindow.onload = () => {
@@ -692,6 +692,14 @@ export default function Cart({
     }
 
     showSnackbar("เปิดหน้าพิมพ์ใบเสร็จแล้ว", "success");
+  };
+
+  const handlePrintReceipt = () => {
+    if (!savedOrder) {
+      showSnackbar("กรุณายืนยันการชำระเงินก่อน", "warning");
+      return;
+    }
+    printReceipt(savedOrder);
   };
 
   const handleConfirmPayment = async () => {
@@ -724,17 +732,11 @@ export default function Cart({
       setIsSavingOrder(true);
 
       const payload: OrderCreatePayload = {
-        date: new Date().toLocaleString("sv-SE").replace("T", " ").slice(0, 16),
-        items: totalQty,
-        total,
         paymentMethod,
         receivedAmount: paymentMethod === "cash" ? received : total,
-        change: paymentMethod === "cash" ? Math.max(change, 0) : 0,
         products: cart.map((item) => ({
           id: Number(item.id),
-          name: item.name,
           qty: item.qty,
-          price: Number(item.price),
         })),
       };
 
@@ -751,7 +753,7 @@ export default function Cart({
 
       if (settings.autoPrintReceipt) {
         setTimeout(() => {
-          handlePrintReceipt();
+          printReceipt(createdOrder);
         }, 150);
       }
 

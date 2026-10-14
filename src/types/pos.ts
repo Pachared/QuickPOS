@@ -74,17 +74,11 @@ export type ProductInput = {
 };
 
 export type OrderCreatePayload = {
-  total: number;
-  items: number;
   paymentMethod: PaymentMethod;
   receivedAmount: number;
-  change: number;
-  date: string;
   products: Array<{
     id: number;
-    name: string;
     qty: number;
-    price: number;
   }>;
 };
 

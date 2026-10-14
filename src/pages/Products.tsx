@@ -145,7 +145,7 @@ export default function Products() {
   };
 
   const handleCloseSnackbar = (
-    _: Event | React.SyntheticEvent<any, Event>,
+    _: Event | React.SyntheticEvent,
     reason?: string
   ) => {
     if (reason === "clickaway") return;
@@ -183,6 +183,8 @@ export default function Products() {
   useEffect(() => {
     void loadProducts();
     focusScanInput();
+    // Initial load and focus only.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
@@ -276,6 +278,8 @@ export default function Products() {
         clearTimeout(scanTimeoutRef.current);
       }
     };
+    // Scanning is triggered by barcode input, not callback identity.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [scanBarcode]);
 
   const saveProduct = async () => {

@@ -7,46 +7,48 @@ import {
   type PosSettingsRow,
 } from "../database/sqlite";
 
-function validateSettings(payload: any): PosSettingsRow {
+function validateSettings(payload: unknown): PosSettingsRow {
+  const input = payload && typeof payload === "object" ? payload as Record<string, unknown> : {};
+  const copyCount = Number(input.copyCount);
   return {
     shopName:
-      typeof payload?.shopName === "string"
-        ? payload.shopName
+      typeof input.shopName === "string"
+        ? input.shopName
         : defaultPosSettings.shopName,
     receiptFooter:
-      typeof payload?.receiptFooter === "string"
-        ? payload.receiptFooter
+      typeof input.receiptFooter === "string"
+        ? input.receiptFooter
         : defaultPosSettings.receiptFooter,
     receiptHeaderNote:
-      typeof payload?.receiptHeaderNote === "string"
-        ? payload.receiptHeaderNote
+      typeof input.receiptHeaderNote === "string"
+        ? input.receiptHeaderNote
         : defaultPosSettings.receiptHeaderNote,
-    printerPaperSize: payload?.printerPaperSize === "58mm" ? "58mm" : "80mm",
+    printerPaperSize: input.printerPaperSize === "58mm" ? "58mm" : "80mm",
     copyCount:
-      typeof payload?.copyCount === "number"
-        ? Math.min(3, Math.max(1, payload.copyCount))
+      Number.isSafeInteger(copyCount)
+        ? Math.min(3, Math.max(1, copyCount))
         : defaultPosSettings.copyCount,
     promptPayId:
-      typeof payload?.promptPayId === "string" ? payload.promptPayId : "",
+      typeof input.promptPayId === "string" ? input.promptPayId : "",
     enableCash:
-      typeof payload?.enableCash === "boolean"
-        ? payload.enableCash
+      typeof input.enableCash === "boolean"
+        ? input.enableCash
         : defaultPosSettings.enableCash,
     enableTransfer:
-      typeof payload?.enableTransfer === "boolean"
-        ? payload.enableTransfer
+      typeof input.enableTransfer === "boolean"
+        ? input.enableTransfer
         : defaultPosSettings.enableTransfer,
     autoPrintReceipt:
-      typeof payload?.autoPrintReceipt === "boolean"
-        ? payload.autoPrintReceipt
+      typeof input.autoPrintReceipt === "boolean"
+        ? input.autoPrintReceipt
         : defaultPosSettings.autoPrintReceipt,
     showPrintPreview:
-      typeof payload?.showPrintPreview === "boolean"
-        ? payload.showPrintPreview
+      typeof input.showPrintPreview === "boolean"
+        ? input.showPrintPreview
         : defaultPosSettings.showPrintPreview,
     soundOnCheckout:
-      typeof payload?.soundOnCheckout === "boolean"
-        ? payload.soundOnCheckout
+      typeof input.soundOnCheckout === "boolean"
+        ? input.soundOnCheckout
         : defaultPosSettings.soundOnCheckout,
   };
 }

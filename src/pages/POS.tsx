@@ -78,7 +78,7 @@ export default function POS({ cart, setCart }: Props) {
   };
 
   const handleCloseSnackbar = (
-    _: Event | React.SyntheticEvent<any, Event>,
+    _: Event | React.SyntheticEvent,
     reason?: string
   ) => {
     if (reason === "clickaway") return;
@@ -128,6 +128,8 @@ export default function POS({ cart, setCart }: Props) {
     }, 120);
 
     return () => clearTimeout(timer);
+    // Initial load and focus only; reloading on each render would interrupt scanning.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
@@ -148,6 +150,8 @@ export default function POS({ cart, setCart }: Props) {
         clearTimeout(scanTimeoutRef.current);
       }
     };
+    // scanProduct is intentionally driven only by barcode/product changes.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [barcode, products]);
 
   const addToCart = (product: Product) => {

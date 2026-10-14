@@ -1,8 +1,8 @@
 import { contextBridge, ipcRenderer } from "electron";
 
 contextBridge.exposeInMainWorld("customerDisplay", {
-  onStateChange: (callback: (payload: any) => void) => {
-    const listener = (_event: Electron.IpcRendererEvent, payload: any) => {
+  onStateChange: (callback: (payload: unknown) => void) => {
+    const listener = (_event: Electron.IpcRendererEvent, payload: unknown) => {
       callback(payload);
     };
 

@@ -2,8 +2,10 @@ import { app, BrowserWindow, ipcMain, screen } from "electron";
 import path from "path";
 import fs from "fs";
 
+type CustomerDisplayState = object;
+
 let customerDisplayWindow: BrowserWindow | null = null;
-let currentState: any = null;
+let currentState: CustomerDisplayState | null = null;
 
 function getExternalDisplayBounds() {
   const displays = screen.getAllDisplays();
@@ -113,7 +115,7 @@ function createCustomerDisplayWindow() {
   return customerDisplayWindow;
 }
 
-function sendStateToCustomerDisplay(state: any) {
+function sendStateToCustomerDisplay(state: CustomerDisplayState) {
   currentState = state;
 
   const win = createCustomerDisplayWindow();
@@ -124,12 +126,14 @@ function sendStateToCustomerDisplay(state: any) {
 }
 
 export function registerCustomerDisplayIpc() {
-  ipcMain.handle("customer-display:open", async (_event, payload) => {
+  ipcMain.handle("customer-display:open", async (_event, payload: unknown) => {
+    if (!payload || typeof payload !== "object") throw new Error("ข้อมูลหน้าจอลูกค้าไม่ถูกต้อง");
     sendStateToCustomerDisplay(payload);
     return { success: true };
   });
 
-  ipcMain.handle("customer-display:update", async (_event, payload) => {
+  ipcMain.handle("customer-display:update", async (_event, payload: unknown) => {
+    if (!payload || typeof payload !== "object") throw new Error("ข้อมูลหน้าจอลูกค้าไม่ถูกต้อง");
     sendStateToCustomerDisplay(payload);
     return { success: true };
   });

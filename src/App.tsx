@@ -1,14 +1,14 @@
 import { Box } from "@mui/material";
 import { Routes, Route, useLocation } from "react-router-dom";
-import { useCallback, useEffect, useState } from "react";
+import { lazy, Suspense, useCallback, useEffect, useState } from "react";
 
 import Sidebar from "./components/Sidebar";
 import Cart from "./components/Cart";
 
-import POS from "./pages/POS";
-import Products from "./pages/Products";
-import Orders from "./pages/Orders";
-import Settings from "./pages/Settings";
+const POS = lazy(() => import("./pages/POS"));
+const Products = lazy(() => import("./pages/Products"));
+const Orders = lazy(() => import("./pages/Orders"));
+const Settings = lazy(() => import("./pages/Settings"));
 
 import type { CartItem, Order } from "./types/pos";
 
@@ -18,6 +18,7 @@ export default function App() {
   const location = useLocation();
 
   const isProductsPage = location.pathname === "/products";
+  const isPosPage = location.pathname === "/";
 
   const loadOrders = useCallback(async () => {
     try {
@@ -29,7 +30,10 @@ export default function App() {
   }, []);
 
   useEffect(() => {
-    void loadOrders();
+    const timer = window.setTimeout(() => {
+      void loadOrders();
+    }, 0);
+    return () => window.clearTimeout(timer);
   }, [loadOrders]);
 
   const removeItem = (id: number | string) => {
@@ -60,7 +64,7 @@ export default function App() {
         sx={{
           flexGrow: 1,
           ml: "20px",
-          mr: "380px",
+          mr: isPosPage ? "380px" : 2,
           p: 2,
           minWidth: 0,
           minHeight: 0,
@@ -70,20 +74,24 @@ export default function App() {
           flexDirection: "column",
         }}
       >
-        <Routes>
-          <Route path="/" element={<POS cart={cart} setCart={setCart} />} />
-          <Route path="/products" element={<Products />} />
-          <Route path="/orders" element={<Orders orders={orders} />} />
-          <Route path="/settings" element={<Settings />} />
-        </Routes>
+        <Suspense fallback={<Box flexGrow={1} />}>
+          <Routes>
+            <Route path="/" element={<POS cart={cart} setCart={setCart} />} />
+            <Route path="/products" element={<Products />} />
+            <Route path="/orders" element={<Orders orders={orders} />} />
+            <Route path="/settings" element={<Settings />} />
+          </Routes>
+        </Suspense>
       </Box>
 
-      <Cart
-        cart={cart}
-        removeItem={removeItem}
-        clearCart={clearCart}
-        onCheckoutSuccess={handleCheckoutSuccess}
-      />
+      {isPosPage ? (
+        <Cart
+          cart={cart}
+          removeItem={removeItem}
+          clearCart={clearCart}
+          onCheckoutSuccess={handleCheckoutSuccess}
+        />
+      ) : null}
     </Box>
   );
 }

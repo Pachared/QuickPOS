@@ -11,6 +11,15 @@ function formatCurrency(value) {
   }
 }
 
+function escapeHtml(value) {
+  return String(value ?? "")
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#039;");
+}
+
 function renderWaiting() {
   document.getElementById("app").innerHTML = `
     <div class="full-center">
@@ -37,16 +46,16 @@ function renderTransfer(state) {
             <img src="../assets/QuickPOS.svg" alt="QuickPOS Logo" />
           </div>
           <div>
-            <div class="shop-name">${state.shopName || "-"}</div>
+            <div class="shop-name">${escapeHtml(state.shopName || "-")}</div>
             <div class="subtitle">${
-              state.receiptHeaderNote || "สแกนเพื่อชำระเงิน"
+              escapeHtml(state.receiptHeaderNote || "สแกนเพื่อชำระเงิน")
             }</div>
           </div>
         </div>
 
         <div class="receipt-box">
           <div class="receipt-label">เลขที่ใบเสร็จ</div>
-          <div class="receipt-no">${state.receiptNo || "-"}</div>
+          <div class="receipt-no">${escapeHtml(state.receiptNo || "-")}</div>
         </div>
 
         <div class="headline">ชำระเงินด้วยพร้อมเพย์</div>
